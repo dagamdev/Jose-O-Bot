@@ -19,16 +19,12 @@ export class BotClient extends Client {
     try {
       await connect(dbUrl)
       console.log('🟢 Connected to the database')
+
       this.loadEvents()
       this.loadCommands()
-      // this.loadCommands('slash', this.slashCommands)
-      // this.loadCommands('context', this.contextCommands)
-      // this.loadCommands('text', this.textCommands)
       this.login(token)
-      // this.on()
     } catch (error) {
-      // console.log("🔴 An error occurred while connecting to the database", error)
-      console.log('❌ An error occurred while starting the bot', error)
+      console.log('🔴 An error occurred while starting the bot', error)
     }
   }
 
@@ -49,6 +45,10 @@ export class BotClient extends Client {
 
       this.slashCommands.set(command.struct.name, command)
     })
+  }
+
+  public getGuild (guildId: string) {
+    return this.guilds.cache.get(guildId)
   }
 
   public getChannel (channelId: string) {

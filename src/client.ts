@@ -1,11 +1,15 @@
 import { readdirSync } from 'node:fs'
+import path from 'node:path'
 import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js'
-import { BOT_DATA } from './utils/data'
+import { BOT_DATA, cache } from './utils/data'
 import type { EventNames } from './types'
 import { connect } from 'mongoose'
 
+const rootFolder = __dirname.slice(__dirname.lastIndexOf(path.sep) + 1)
+
 export class BotClient extends Client {
-  public data = BOT_DATA
+  public readonly data = BOT_DATA
+  public cache = cache
   public slashCommands = new Collection<string, ClientSlashCommand>()
 
   constructor () {
@@ -29,8 +33,8 @@ export class BotClient extends Client {
   }
 
   private loadEvents () {
-    readdirSync('./src/events/').forEach(async file => {
-      const Constructor = (await import(`../src/events/${file}`)).default
+    readdirSync(`./${rootFolder}/events/`).forEach(async file => {
+      const Constructor = (await import(`../${rootFolder}/events/${file}`)).default
       const event: ClientEvent = new Constructor()
 
       if (event.isOnce) this.once(event.name, async (...args) => { await event.execute(...args, this) })
@@ -39,8 +43,8 @@ export class BotClient extends Client {
   }
 
   private loadCommands () {
-    readdirSync('./src/commands/slash/').forEach(async file => {
-      const Constructor = (await import(`../src/commands/slash/${file}`)).default
+    readdirSync(`./${rootFolder}/commands/slash/`).forEach(async file => {
+      const Constructor = (await import(`../${rootFolder}/commands/slash/${file}`)).default
       const command: ClientSlashCommand = new Constructor()
 
       this.slashCommands.set(command.struct.name, command)

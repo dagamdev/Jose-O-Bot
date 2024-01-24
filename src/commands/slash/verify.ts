@@ -1,4 +1,4 @@
-import { ChannelType, EmbedBuilder, PermissionFlagsBits, Role, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js'
+import { ChannelType, EmbedBuilder, PermissionFlagsBits, Role, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, CategoryChannel, ThreadChannel } from 'discord.js'
 import { type BotClient, ClientSlashCommand, type SlashInteraction } from '../../client'
 import { VerifyModel } from '../../models'
 import { CUSTOM_IDS } from '../../utils/constants'
@@ -37,7 +37,7 @@ export default class VerifySlashCommand extends ClientSlashCommand {
     super(VerifyScb)
   }
 
-  public async execute (int: SlashInteraction, client?: BotClient) {
+  public async execute (int: SlashInteraction, client: BotClient) {
     const { options, guild, guildId } = int
 
     if (!(guild?.members.me?.permissions.has('ManageRoles') ?? false)) {
@@ -64,15 +64,49 @@ export default class VerifySlashCommand extends ClientSlashCommand {
     const channel = options.getChannel<ChannelType.GuildText | ChannelType.GuildAnnouncement>('channel')
     const requiredServerId = options.getString('server-id', true)
 
-    const requiredServer = client?.guilds.cache.has(requiredServerId)
+    const requiredServer = client.getGuild(requiredServerId)
 
-    if (!(requiredServer ?? false)) {
+    if (requiredServer === undefined) {
       int.reply({ ephemeral: true, content: `No me encuentro en ningún servidor con la ID \`\`${requiredServerId}\`\`, asegúrate de pasar bien la ID y de que me encuentre dentro del servidor requerido.` })
       return
     }
     if (requiredServerId === guildId) {
       int.reply({ ephemeral: true, content: 'No puedes establecer como servidor requerido este mismo servidor.' })
       return
+    }
+
+    const inviteRequiredServer = client.cache.guildInvites.some(g => g.guildId === guildId)
+    if (!inviteRequiredServer) {
+      const invites = await requiredServer.invites.fetch()
+      const meInvite = invites.find(inv => inv.inviter?.id === client.user?.id)
+
+      if (meInvite === undefined) {
+        const firstChannel = requiredServer.channels.cache.find(ch => {
+          return ch.type !== ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite')
+        })
+
+        if (firstChannel === undefined) {
+          int.reply({ ephemeral: true, content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' })
+          return
+        }
+        if (firstChannel instanceof CategoryChannel || firstChannel instanceof ThreadChannel) {
+          console.log('Canal con permisos para crear invitación, tipo', firstChannel.type)
+          int.reply({ ephemeral: true, content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' })
+          return
+        }
+
+        firstChannel.createInvite({ maxAge: 0 }).then(newInvite => {
+          client.cache.guildInvites.push({
+            guildId: requiredServerId,
+            inviteUrl: newInvite.url
+          })
+        })
+      } else {
+        client.cache.guildInvites.push({
+          guildId: requiredServerId,
+          inviteUrl: meInvite.url
+        })
+      }
     }
 
     const VerifyData = await VerifyModel.findOne({ guildId })

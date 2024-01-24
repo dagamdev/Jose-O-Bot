@@ -54,14 +54,45 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
         }
         const channel = options.getChannel('channel');
         const requiredServerId = options.getString('server-id', true);
-        const requiredServer = client?.guilds.cache.has(requiredServerId);
-        if (!(requiredServer ?? false)) {
+        const requiredServer = client.getGuild(requiredServerId);
+        if (requiredServer === undefined) {
             int.reply({ ephemeral: true, content: `No me encuentro en ningún servidor con la ID \`\`${requiredServerId}\`\`, asegúrate de pasar bien la ID y de que me encuentre dentro del servidor requerido.` });
             return;
         }
         if (requiredServerId === guildId) {
             int.reply({ ephemeral: true, content: 'No puedes establecer como servidor requerido este mismo servidor.' });
             return;
+        }
+        const inviteRequiredServer = client.cache.guildInvites.some(g => g.guildId === guildId);
+        if (!inviteRequiredServer) {
+            const invites = await requiredServer.invites.fetch();
+            const meInvite = invites.find(inv => inv.inviter?.id === client.user?.id);
+            if (meInvite === undefined) {
+                const firstChannel = requiredServer.channels.cache.find(ch => {
+                    return ch.type !== discord_js_1.ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite');
+                });
+                if (firstChannel === undefined) {
+                    int.reply({ ephemeral: true, content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' });
+                    return;
+                }
+                if (firstChannel instanceof discord_js_1.CategoryChannel || firstChannel instanceof discord_js_1.ThreadChannel) {
+                    console.log('Canal con permisos para crear invitación, tipo', firstChannel.type);
+                    int.reply({ ephemeral: true, content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' });
+                    return;
+                }
+                firstChannel.createInvite({ maxAge: 0 }).then(newInvite => {
+                    client.cache.guildInvites.push({
+                        guildId: requiredServerId,
+                        inviteUrl: newInvite.url
+                    });
+                });
+            }
+            else {
+                client.cache.guildInvites.push({
+                    guildId: requiredServerId,
+                    inviteUrl: meInvite.url
+                });
+            }
         }
         const VerifyData = await models_1.VerifyModel.findOne({ guildId });
         const VerifyEmbed = new discord_js_1.EmbedBuilder().setColor('Green');

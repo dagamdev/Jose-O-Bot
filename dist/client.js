@@ -22,14 +22,20 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClientSlashCommand = exports.ClientEvent = exports.BotClient = void 0;
 const node_fs_1 = require("node:fs");
+const node_path_1 = __importDefault(require("node:path"));
 const discord_js_1 = require("discord.js");
 const data_1 = require("./utils/data");
 const mongoose_1 = require("mongoose");
+const rootFolder = __dirname.slice(__dirname.lastIndexOf(node_path_1.default.sep) + 1);
 class BotClient extends discord_js_1.Client {
     data = data_1.BOT_DATA;
+    cache = data_1.cache;
     slashCommands = new discord_js_1.Collection();
     constructor() {
         super({
@@ -50,8 +56,8 @@ class BotClient extends discord_js_1.Client {
         }
     }
     loadEvents() {
-        (0, node_fs_1.readdirSync)('./src/events/').forEach(async (file) => {
-            const Constructor = (await Promise.resolve(`${`../src/events/${file}`}`).then(s => __importStar(require(s)))).default;
+        (0, node_fs_1.readdirSync)(`./${rootFolder}/events/`).forEach(async (file) => {
+            const Constructor = (await Promise.resolve(`${`../${rootFolder}/events/${file}`}`).then(s => __importStar(require(s)))).default;
             const event = new Constructor();
             if (event.isOnce)
                 this.once(event.name, async (...args) => { await event.execute(...args, this); });
@@ -60,8 +66,8 @@ class BotClient extends discord_js_1.Client {
         });
     }
     loadCommands() {
-        (0, node_fs_1.readdirSync)('./src/commands/slash/').forEach(async (file) => {
-            const Constructor = (await Promise.resolve(`${`../src/commands/slash/${file}`}`).then(s => __importStar(require(s)))).default;
+        (0, node_fs_1.readdirSync)(`./${rootFolder}/commands/slash/`).forEach(async (file) => {
+            const Constructor = (await Promise.resolve(`${`../${rootFolder}/commands/slash/${file}`}`).then(s => __importStar(require(s)))).default;
             const command = new Constructor();
             this.slashCommands.set(command.struct.name, command);
         });

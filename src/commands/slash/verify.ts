@@ -75,12 +75,50 @@ export default class VerifySlashCommand extends ClientSlashCommand {
       return
     }
 
-    const inviteRequiredServer = client.cache.guildInvites.some(g => g.guildId === guildId)
-    if (!inviteRequiredServer) {
-      const invites = await requiredServer.invites.fetch()
-      const meInvite = invites.find(inv => inv.inviter?.id === client.user?.id)
+    await int.deferReply({ ephemeral: true })
 
-      if (meInvite === undefined) {
+    const VerifyData = await VerifyModel.findOne({ guildId })
+    const VerifyEmbed = new EmbedBuilder().setColor('Green')
+
+    let inviteUrl = ''
+
+    if (VerifyData === null) {
+      const firstChannel = requiredServer.channels.cache.find(ch => {
+        return ch.type !== ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite')
+      })
+
+      if (firstChannel === undefined) {
+        int.editReply({ content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' })
+        return
+      }
+      if (firstChannel instanceof CategoryChannel || firstChannel instanceof ThreadChannel) {
+        console.log('Canal con permisos para crear invitación, tipo', firstChannel.type)
+        int.editReply({ content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' })
+        return
+      }
+
+      const newInvite = await firstChannel.createInvite({ maxAge: 0 })
+
+      inviteUrl = newInvite.url
+      await VerifyModel.create({
+        guildId,
+        rolId: role.id,
+        requiredGuildId: requiredServerId,
+        inviteUrl
+      })
+
+      VerifyEmbed.setTitle('Verificación establecida')
+        .setDescription(channel === null
+          ? 'El mensaje de verificación se ha enviado en este canal.'
+          : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`
+        )
+    } else {
+      inviteUrl = VerifyData.inviteUrl
+      try {
+        await client.fetchInvite(VerifyData.inviteUrl)
+      } catch (error: unknown) {
+        console.error('Invitación invalida')
+
         const firstChannel = requiredServer.channels.cache.find(ch => {
           return ch.type !== ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite')
         })
@@ -95,36 +133,13 @@ export default class VerifySlashCommand extends ClientSlashCommand {
           return
         }
 
-        firstChannel.createInvite({ maxAge: 0 }).then(newInvite => {
-          client.cache.guildInvites.push({
-            guildId: requiredServerId,
-            inviteUrl: newInvite.url
-          })
-        })
-      } else {
-        client.cache.guildInvites.push({
-          guildId: requiredServerId,
-          inviteUrl: meInvite.url
-        })
+        const newInvite = await firstChannel.createInvite({ maxAge: 0 })
+        inviteUrl = newInvite.url
+
+        VerifyData.inviteUrl = inviteUrl
+        await VerifyData.save()
       }
-    }
 
-    const VerifyData = await VerifyModel.findOne({ guildId })
-    const VerifyEmbed = new EmbedBuilder().setColor('Green')
-
-    if (VerifyData === null) {
-      await VerifyModel.create({
-        guildId,
-        rolId: role.id,
-        requiredGuildId: requiredServerId
-      })
-
-      VerifyEmbed.setTitle('Verificación establecida')
-        .setDescription(channel === null
-          ? 'El mensaje de verificación se ha enviado en este canal.'
-          : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`
-        )
-    } else {
       if (VerifyData.rolId === role.id && VerifyData.requiredGuildId === requiredServerId) {
         VerifyEmbed.setTitle('Mensaje de verificación enviado')
           .setDescription('No hay cambios en los datos, se envio el mensaje de verificación ' + (channel === null
@@ -137,11 +152,16 @@ export default class VerifySlashCommand extends ClientSlashCommand {
         await VerifyData.save()
 
         VerifyEmbed.setTitle('Verificación actualizada')
-          .setDescription('Se actualizaron los datos de verificación en este servidor.' + (channel === null
+          .setDescription('Se actualizaron los datos de verificación en este servidor.\n' + (channel === null
             ? 'El mensaje de verificación se ha enviado en este canal.'
             : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`
           ))
       }
+    }
+
+    if (inviteUrl.length === 0) {
+      await int.editReply({ content: 'No he podido obtener el enlace de invitación del servidor. Notifica de este error.' })
+      return
     }
 
     const definitiveVerificationChannel = channel ?? int.channel
@@ -149,8 +169,8 @@ export default class VerifySlashCommand extends ClientSlashCommand {
     if (definitiveVerificationChannel?.isTextBased() ?? false) {
       const VerificationEmbed = new EmbedBuilder()
         .setTitle('Verificación')
-        .setDescription('Has click en el boton de verificar para verificarte en el servidor de origen.')
-        .setColor('Green')
+        .setDescription('¡Hola! Antes de explorar nuestro contenido, únete a nuestro servidor de respaldo dando __clik al botón “Server”__ para realizar la verificación, luego de ingresar, da __clik en el botón “verificar”__. ¡Listo para disfrutar!')
+        .setColor(client.data.colors.default)
 
       const VerificationButton = new ButtonBuilder()
         .setCustomId(CUSTOM_IDS.VERiFY)
@@ -158,17 +178,20 @@ export default class VerifySlashCommand extends ClientSlashCommand {
         .setLabel('Verificar')
         .setStyle(ButtonStyle.Success)
 
+      const ServerLinkButton = new ButtonBuilder()
+        .setEmoji('🔗')
+        .setLabel('Server')
+        .setStyle(ButtonStyle.Link)
+        .setURL(inviteUrl)
+
       const VerificationComponents = new ActionRowBuilder<ButtonBuilder>()
-        .setComponents(VerificationButton)
+        .setComponents(VerificationButton, ServerLinkButton)
 
       await definitiveVerificationChannel?.send({
         embeds: [VerificationEmbed],
         components: [VerificationComponents]
       })
-      int.reply({ ephemeral: true, embeds: [VerifyEmbed] })
-      return
-    }
-
-    int.reply({ ephemeral: true, embeds: [VerifyEmbed] })
+      await int.editReply({ embeds: [VerifyEmbed] })
+    } else int.editReply({ embeds: [VerifyEmbed] })
   }
 }

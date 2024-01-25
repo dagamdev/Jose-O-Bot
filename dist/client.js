@@ -47,6 +47,7 @@ class BotClient extends discord_js_1.Client {
         try {
             await (0, mongoose_1.connect)(dbUrl);
             console.log('🟢 Connected to the database');
+            this.error();
             this.loadEvents();
             this.loadCommands();
             this.login(token);
@@ -54,6 +55,11 @@ class BotClient extends discord_js_1.Client {
         catch (error) {
             console.log('🔴 An error occurred while starting the bot', error);
         }
+    }
+    error() {
+        process.on('unhandledRejection', (error) => {
+            console.error('❌ Process error: ', error);
+        });
     }
     loadEvents() {
         (0, node_fs_1.readdirSync)(`./${rootFolder}/events/`).forEach(async (file) => {

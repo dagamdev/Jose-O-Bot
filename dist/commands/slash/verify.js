@@ -63,11 +63,43 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
             int.reply({ ephemeral: true, content: 'No puedes establecer como servidor requerido este mismo servidor.' });
             return;
         }
-        const inviteRequiredServer = client.cache.guildInvites.some(g => g.guildId === guildId);
-        if (!inviteRequiredServer) {
-            const invites = await requiredServer.invites.fetch();
-            const meInvite = invites.find(inv => inv.inviter?.id === client.user?.id);
-            if (meInvite === undefined) {
+        await int.deferReply({ ephemeral: true });
+        const VerifyData = await models_1.VerifyModel.findOne({ guildId });
+        const VerifyEmbed = new discord_js_1.EmbedBuilder().setColor('Green');
+        let inviteUrl = '';
+        if (VerifyData === null) {
+            const firstChannel = requiredServer.channels.cache.find(ch => {
+                return ch.type !== discord_js_1.ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite');
+            });
+            if (firstChannel === undefined) {
+                int.editReply({ content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' });
+                return;
+            }
+            if (firstChannel instanceof discord_js_1.CategoryChannel || firstChannel instanceof discord_js_1.ThreadChannel) {
+                console.log('Canal con permisos para crear invitación, tipo', firstChannel.type);
+                int.editReply({ content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' });
+                return;
+            }
+            const newInvite = await firstChannel.createInvite({ maxAge: 0 });
+            inviteUrl = newInvite.url;
+            await models_1.VerifyModel.create({
+                guildId,
+                rolId: role.id,
+                requiredGuildId: requiredServerId,
+                inviteUrl
+            });
+            VerifyEmbed.setTitle('Verificación establecida')
+                .setDescription(channel === null
+                ? 'El mensaje de verificación se ha enviado en este canal.'
+                : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`);
+        }
+        else {
+            inviteUrl = VerifyData.inviteUrl;
+            try {
+                await client.fetchInvite(VerifyData.inviteUrl);
+            }
+            catch (error) {
+                console.error('Invitación invalida');
                 const firstChannel = requiredServer.channels.cache.find(ch => {
                     return ch.type !== discord_js_1.ChannelType.GuildCategory && ch.permissionsFor(client.user?.id ?? '')?.has('CreateInstantInvite');
                 });
@@ -80,34 +112,11 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
                     int.reply({ ephemeral: true, content: 'No puedo crear invitaciones en el servidor requerido. Por favor, otórgame los permisos necesarios para crear invitaciones en algún canal.' });
                     return;
                 }
-                firstChannel.createInvite({ maxAge: 0 }).then(newInvite => {
-                    client.cache.guildInvites.push({
-                        guildId: requiredServerId,
-                        inviteUrl: newInvite.url
-                    });
-                });
+                const newInvite = await firstChannel.createInvite({ maxAge: 0 });
+                inviteUrl = newInvite.url;
+                VerifyData.inviteUrl = inviteUrl;
+                await VerifyData.save();
             }
-            else {
-                client.cache.guildInvites.push({
-                    guildId: requiredServerId,
-                    inviteUrl: meInvite.url
-                });
-            }
-        }
-        const VerifyData = await models_1.VerifyModel.findOne({ guildId });
-        const VerifyEmbed = new discord_js_1.EmbedBuilder().setColor('Green');
-        if (VerifyData === null) {
-            await models_1.VerifyModel.create({
-                guildId,
-                rolId: role.id,
-                requiredGuildId: requiredServerId
-            });
-            VerifyEmbed.setTitle('Verificación establecida')
-                .setDescription(channel === null
-                ? 'El mensaje de verificación se ha enviado en este canal.'
-                : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`);
-        }
-        else {
             if (VerifyData.rolId === role.id && VerifyData.requiredGuildId === requiredServerId) {
                 VerifyEmbed.setTitle('Mensaje de verificación enviado')
                     .setDescription('No hay cambios en los datos, se envio el mensaje de verificación ' + (channel === null
@@ -119,32 +128,41 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
                 VerifyData.requiredGuildId = requiredServerId;
                 await VerifyData.save();
                 VerifyEmbed.setTitle('Verificación actualizada')
-                    .setDescription('Se actualizaron los datos de verificación en este servidor.' + (channel === null
+                    .setDescription('Se actualizaron los datos de verificación en este servidor.\n' + (channel === null
                     ? 'El mensaje de verificación se ha enviado en este canal.'
                     : `El mensaje de verificación se ha enviado al canal <#${channel.id}>.`));
             }
+        }
+        if (inviteUrl.length === 0) {
+            await int.editReply({ content: 'No he podido obtener el enlace de invitación del servidor. Notifica de este error.' });
+            return;
         }
         const definitiveVerificationChannel = channel ?? int.channel;
         if (definitiveVerificationChannel?.isTextBased() ?? false) {
             const VerificationEmbed = new discord_js_1.EmbedBuilder()
                 .setTitle('Verificación')
-                .setDescription('Has click en el boton de verificar para verificarte en el servidor de origen.')
-                .setColor('Green');
+                .setDescription('¡Hola! Antes de explorar nuestro contenido, únete a nuestro servidor de respaldo dando __clik al botón “Server”__ para realizar la verificación, luego de ingresar, da __clik en el botón “verificar”__. ¡Listo para disfrutar!')
+                .setColor(client.data.colors.default);
             const VerificationButton = new discord_js_1.ButtonBuilder()
                 .setCustomId(constants_1.CUSTOM_IDS.VERiFY)
                 .setEmoji('✅')
                 .setLabel('Verificar')
                 .setStyle(discord_js_1.ButtonStyle.Success);
+            const ServerLinkButton = new discord_js_1.ButtonBuilder()
+                .setEmoji('🔗')
+                .setLabel('Server')
+                .setStyle(discord_js_1.ButtonStyle.Link)
+                .setURL(inviteUrl);
             const VerificationComponents = new discord_js_1.ActionRowBuilder()
-                .setComponents(VerificationButton);
+                .setComponents(VerificationButton, ServerLinkButton);
             await definitiveVerificationChannel?.send({
                 embeds: [VerificationEmbed],
                 components: [VerificationComponents]
             });
-            int.reply({ ephemeral: true, embeds: [VerifyEmbed] });
-            return;
+            await int.editReply({ embeds: [VerifyEmbed] });
         }
-        int.reply({ ephemeral: true, embeds: [VerifyEmbed] });
+        else
+            int.editReply({ embeds: [VerifyEmbed] });
     }
 }
 exports.default = VerifySlashCommand;

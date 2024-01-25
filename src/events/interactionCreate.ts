@@ -48,7 +48,7 @@ export default class InteractionCreateEvent extends ClientEvent {
           return
         }
 
-        const guildInvite = client.cache.guildInvites.find(g => g.guildId === guildId)?.inviteUrl
+        const guildInvite = VerifyData.inviteUrl
 
         if (!requiredServer.members.cache.has(user.id)) {
           await int.editReply({ content: `No te encuentras en el servidor ${guildInvite === undefined ? requiredServer.name : `[${requiredServer.name}](${guildInvite})`} para poder verificarte.` })

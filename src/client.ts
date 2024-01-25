@@ -24,12 +24,19 @@ export class BotClient extends Client {
       await connect(dbUrl)
       console.log('🟢 Connected to the database')
 
+      this.error()
       this.loadEvents()
       this.loadCommands()
       this.login(token)
     } catch (error) {
       console.log('🔴 An error occurred while starting the bot', error)
     }
+  }
+
+  private error () {
+    process.on('unhandledRejection', (error: Error) => {
+      console.error('❌ Process error: ', error)
+    })
   }
 
   private loadEvents () {

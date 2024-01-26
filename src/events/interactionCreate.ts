@@ -1,7 +1,7 @@
 import { GuildMember, type CacheType, type Interaction } from 'discord.js'
 import { type BotClient, ClientEvent } from '../client'
 import { CUSTOM_IDS } from '../utils/constants'
-import { VerifyModel } from '../models'
+import { UserModel, VerifyModel } from '../models'
 
 export default class InteractionCreateEvent extends ClientEvent {
   constructor () {
@@ -14,11 +14,17 @@ export default class InteractionCreateEvent extends ClientEvent {
 
       const command = client.slashCommands.get(commandName)
 
-      if (command !== undefined) command.execute(int, client)
+      if (command !== undefined) {
+        try {
+          await command.execute(int, client)
+        } catch (error) {
+          console.error(`Error executing ${commandName} Slash command`, error)
+        }
+      }
     }
 
     if (int.isButton()) {
-      const { customId, guildId, member, user } = int
+      const { customId, guildId, guild, member, user } = int
 
       if (customId === CUSTOM_IDS.VERiFY) {
         const VerifyData = await VerifyModel.findOne({ guildId })
@@ -63,6 +69,47 @@ export default class InteractionCreateEvent extends ClientEvent {
           })
         }, 1000)
       }
+
+      if (customId === CUSTOM_IDS.CREATE_BACKUP_CONFIRM) {
+        if (guild === null) {
+          int.update({ embeds: [], components: [], content: 'No estás dentro de un servidor.' })
+          return
+        }
+
+        let userData = await UserModel.findOne({ userId: user.id })
+        userData ??= await UserModel.create({
+          userId: user.id
+        })
+
+        guild.channels.cache.forEach(ch => {
+
+        })
+        await int.update({ embeds: [], components: [], content: 'Creando respaldo del servidor...' })
+      }
+
+      if (customId === CUSTOM_IDS.CREATE_BACKUP_CANCEL) {
+        // int.deferUpdate({})
+        int.update({ embeds: [], components: [], content: 'Acción cancelada.' })
+      }
+    }
+
+    if (int.isAutocomplete()) {
+      console.log(int.commandName)
+
+      const focusedValue = int.options.getFocused()
+      console.log(focusedValue)
+      const choices = [
+        'Popular', 'Topics', ' Threads', 'Sharding', 'Getting',
+        'started', 'Library', 'Voice', 'Connections', 'Interactions:',
+        'Replying', 'to', 'slash', 'commands', 'Popular',
+        'Topics:', 'Embed', 'preview', 'Rojo', 'Blanco',
+        'Verde', 'Naranja', 'Majenta', 'Azul', 'Avena',
+        'Abeja'
+      ]
+      const filtered = choices.filter(choice => choice.toLowerCase().includes(focusedValue.toLowerCase()))
+      await int.respond(
+        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
+      )
     }
   }
 }

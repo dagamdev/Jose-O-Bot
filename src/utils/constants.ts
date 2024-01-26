@@ -1,5 +1,7 @@
 export enum CUSTOM_IDS {
-  VERiFY = 'verify'
+  VERiFY = 'verify',
+  CREATE_BACKUP_CONFIRM = 'create-backup-confirm',
+  CREATE_BACKUP_CANCEL = 'create-backup-cancel'
 }
 
 export enum CHANNEL_IDS {

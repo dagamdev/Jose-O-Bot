@@ -1,4 +1,4 @@
-import { type BotClient, ClientSlashCommand, type SlashInteraction } from '../../client'
+import { ClientSlashCommand } from '../../client'
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js'
 
 const IgnoreScb = new SlashCommandBuilder()
@@ -29,10 +29,10 @@ const IgnoreScb = new SlashCommandBuilder()
 
 export default class BackupSlashCommand extends ClientSlashCommand {
   constructor () {
-    super(IgnoreScb)
-  }
+    super(IgnoreScb,
+      async (int, client) => {
 
-  public async execute (int: SlashInteraction, client: BotClient) {
-
+      }
+    )
   }
 }

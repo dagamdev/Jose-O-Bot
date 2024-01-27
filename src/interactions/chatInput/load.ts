@@ -1,4 +1,4 @@
-import { type BotClient, ClientSlashCommand, type SlashInteraction } from '../../client'
+import { ClientSlashCommand } from '../../client'
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js'
 
 export default class LoadSlashCommand extends ClientSlashCommand {
@@ -22,17 +22,16 @@ export default class LoadSlashCommand extends ClientSlashCommand {
         )
       )
       .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-      .toJSON())
-  }
+      .toJSON(),
+    async (int, client) => {
+      const { options } = int
+      const subCommandName = int.options.getSubcommand(true)
 
-  public async execute (int: SlashInteraction, client: BotClient) {
-    const { options } = int
-    const subCommandName = int.options.getSubcommand(true)
+      if (subCommandName === 'backup') {
+        const backupId = options.getString('id', true)
 
-    if (subCommandName === 'backup') {
-      const backupId = options.getString('id', true)
-
-      int.reply({ ephemeral: true, content: `El ID del backup es ${backupId}` })
-    }
+        int.reply({ ephemeral: true, content: `El ID del backup es ${backupId}` })
+      }
+    })
   }
 }

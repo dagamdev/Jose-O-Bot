@@ -1,4 +1,4 @@
-export enum CUSTOM_IDS {
+export enum BUTTON_IDS {
   VERiFY = 'verify',
   CREATE_BACKUP_CONFIRM = 'create-backup-confirm',
   CREATE_BACKUP_CANCEL = 'create-backup-cancel'

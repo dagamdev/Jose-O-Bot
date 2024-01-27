@@ -1,7 +1,5 @@
-import { GuildMember, type CacheType, type Interaction } from 'discord.js'
+import { type CacheType, type Interaction } from 'discord.js'
 import { type BotClient, ClientEvent } from '../client'
-import { CUSTOM_IDS } from '../utils/constants'
-import { UserModel, VerifyModel } from '../models'
 
 export default class InteractionCreateEvent extends ClientEvent {
   constructor () {
@@ -18,78 +16,22 @@ export default class InteractionCreateEvent extends ClientEvent {
         try {
           await command.execute(int, client)
         } catch (error) {
-          console.error(`Error executing ${commandName} Slash command`, error)
+          console.error(`Error executing the command ${commandName}.`, error)
         }
       }
     }
 
     if (int.isButton()) {
-      const { customId, guildId, guild, member, user } = int
+      const { customId } = int
 
-      if (customId === CUSTOM_IDS.VERiFY) {
-        const VerifyData = await VerifyModel.findOne({ guildId })
+      const buttonHandler = client.buttonHandlers.get(customId)
 
-        if (VerifyData === null) {
-          int.reply({ ephemeral: true, content: 'Parece que está desactivada la verificación, ya que no he obtenido datos.' })
-          return
+      if (buttonHandler !== undefined) {
+        try {
+          await buttonHandler.execute(int, client)
+        } catch (error) {
+          console.error(`Error executing the button handler ${customId}.`, error)
         }
-
-        if (!(member instanceof GuildMember)) {
-          console.log('Memmber is a instance of APIInteractionGuildMember')
-          int.reply({ ephemeral: true, content: 'Ha ocurrido un error.' })
-          return
-        }
-
-        if (member.roles.cache.has(VerifyData.rolId)) {
-          int.reply({ ephemeral: true, content: 'Ya estás verificado en el servidor.' })
-          return
-        }
-
-        await int.reply({ ephemeral: true, content: 'Verificando...' })
-
-        const requiredServer = client.getGuild(VerifyData.requiredGuildId)
-
-        if (requiredServer === undefined) {
-          await int.editReply({ content: 'No encuentro el servidor requerido. Por favor, reporta este problema.' })
-          return
-        }
-
-        const guildInvite = VerifyData.inviteUrl
-
-        if (!requiredServer.members.cache.has(user.id)) {
-          await int.editReply({ content: `No te encuentras en el servidor ${guildInvite === undefined ? requiredServer.name : `[${requiredServer.name}](${guildInvite})`} para poder verificarte.` })
-          return
-        }
-
-        setTimeout(() => {
-          member?.roles.add(VerifyData.rolId).then(async () => {
-            await int.editReply({ content: `✅ Verificado, te he otorgado el rol <@&${VerifyData.rolId}>.` })
-          }).catch(async () => {
-            await int.editReply({ content: 'Tengo problemas para asignarte el rol, por favor, repórtalo.' })
-          })
-        }, 1000)
-      }
-
-      if (customId === CUSTOM_IDS.CREATE_BACKUP_CONFIRM) {
-        if (guild === null) {
-          int.update({ embeds: [], components: [], content: 'No estás dentro de un servidor.' })
-          return
-        }
-
-        let userData = await UserModel.findOne({ userId: user.id })
-        userData ??= await UserModel.create({
-          userId: user.id
-        })
-
-        guild.channels.cache.forEach(ch => {
-
-        })
-        await int.update({ embeds: [], components: [], content: 'Creando respaldo del servidor...' })
-      }
-
-      if (customId === CUSTOM_IDS.CREATE_BACKUP_CANCEL) {
-        // int.deferUpdate({})
-        int.update({ embeds: [], components: [], content: 'Acción cancelada.' })
       }
     }
 

@@ -1,9 +1,10 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
-import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js'
+import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction } from 'discord.js'
 import { BOT_DATA, cache } from './utils/data'
-import type { EventNames } from './types'
+import type { EventNames, ButtonIDKeys } from './types'
 import { connect } from 'mongoose'
+import { BUTTON_IDS } from './utils/constants'
 
 const rootFolder = __dirname.slice(__dirname.lastIndexOf(path.sep) + 1)
 
@@ -11,6 +12,7 @@ export class BotClient extends Client {
   public readonly data = BOT_DATA
   public cache = cache
   public slashCommands = new Collection<string, ClientSlashCommand>()
+  public buttonHandlers = new Map<string, ClientButtonInteraction>()
 
   constructor () {
     super({
@@ -24,37 +26,33 @@ export class BotClient extends Client {
       await connect(dbUrl)
       console.log('🟢 Connected to the database')
 
-      this.error()
-      this.loadEvents()
-      this.loadCommands()
+      process.on('unhandledRejection', (error: Error) => {
+        console.error('❌ Process error: ', error)
+      })
+
+      // ? Load events
+      readdirSync(`./${rootFolder}/events/`).forEach(async file => {
+        const { default: Constructor } = await import(`../${rootFolder}/events/${file}`)
+        const event: ClientEvent = new Constructor()
+
+        if (event.isOnce) this.once(event.name, async (...args) => { await event.execute(...args, this) })
+        else this.on(event.name, async (...args) => { await event.execute(...args, this) })
+      })
+
+      this.loadInteractions('chatInput', this.slashCommands, (data) => data.struct.name)
+      this.loadInteractions('button', this.buttonHandlers, (data) => BUTTON_IDS[data.buttonIDKey])
       this.login(token)
     } catch (error) {
       console.log('🔴 An error occurred while starting the bot', error)
     }
   }
 
-  private error () {
-    process.on('unhandledRejection', (error: Error) => {
-      console.error('❌ Process error: ', error)
-    })
-  }
+  private loadInteractions <T = any> (interactionFolder: string, Group: Map<string, T>, getKey: (data: T) => string) {
+    readdirSync(`./${rootFolder}/interactions/${interactionFolder}/`).forEach(async file => {
+      const Constructor = (await import(`../${rootFolder}/interactions/${interactionFolder}/${file}`)).default
+      const element: T = new Constructor()
 
-  private loadEvents () {
-    readdirSync(`./${rootFolder}/events/`).forEach(async file => {
-      const Constructor = (await import(`../${rootFolder}/events/${file}`)).default
-      const event: ClientEvent = new Constructor()
-
-      if (event.isOnce) this.once(event.name, async (...args) => { await event.execute(...args, this) })
-      else this.on(event.name, async (...args) => { await event.execute(...args, this) })
-    })
-  }
-
-  private loadCommands () {
-    readdirSync(`./${rootFolder}/commands/slash/`).forEach(async file => {
-      const Constructor = (await import(`../${rootFolder}/commands/slash/${file}`)).default
-      const command: ClientSlashCommand = new Constructor()
-
-      this.slashCommands.set(command.struct.name, command)
+      Group.set(getKey(element), element)
     })
   }
 
@@ -81,12 +79,27 @@ export abstract class ClientEvent {
 
 export type SlashInteraction = ChatInputCommandInteraction<CacheType>
 
-export abstract class ClientSlashCommand {
-  public readonly struct: RESTPostAPIChatInputApplicationCommandsJSONBody
+export class ClientSlashCommand {
+  public readonly struct
 
-  constructor (struct: RESTPostAPIChatInputApplicationCommandsJSONBody) {
+  constructor (
+    struct: RESTPostAPIChatInputApplicationCommandsJSONBody,
+    execute: (interaction: SlashInteraction, client: BotClient) => Promise<void>
+  ) {
     this.struct = struct
+    this.execute = execute
   }
 
-  public abstract execute (interaction: SlashInteraction, client?: BotClient): Promise<void>
+  public execute
+}
+
+export class ClientButtonInteraction {
+  public readonly buttonIDKey
+
+  constructor (buttonIDKey: ButtonIDKeys, execute: (interaction: ButtonInteraction<CacheType>, client: BotClient) => Promise<void>) {
+    this.buttonIDKey = buttonIDKey
+    this.execute = execute
+  }
+
+  public execute
 }

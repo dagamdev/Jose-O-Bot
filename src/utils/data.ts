@@ -9,6 +9,14 @@ export const BOT_DATA = {
   colors
 }
 
-export const cache = {
+const backupIDs: Array<{
+  userId: string
+  IDs: Array<{
+    value: string
+    name: string
+  }>
+}> = []
 
+export const CACHE = {
+  backupIDs
 }

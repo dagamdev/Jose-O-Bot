@@ -1,5 +1,6 @@
 import { ClientSlashCommand } from '../../client'
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js'
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js'
+import { BUTTON_IDS } from '../../utils/constants'
 
 export default class LoadSlashCommand extends ClientSlashCommand {
   constructor () {
@@ -30,7 +31,39 @@ export default class LoadSlashCommand extends ClientSlashCommand {
       if (subCommandName === 'backup') {
         const backupId = options.getString('id', true)
 
-        int.reply({ ephemeral: true, content: `El ID del backup es ${backupId}` })
+        const ConfirmationLoadBackupEmbed = new EmbedBuilder({
+          title: '⚠️ ¿Estás seguro de que deseas cargar el respaldo?',
+          description: 'Se eliminarán todos los canales y roles actuales, siendo reemplazados por los del respaldo seleccionado.'
+        }).setColor('Yellow')
+
+        const ConfirmationLoadBackupButtons = new ActionRowBuilder<ButtonBuilder>({
+          components: [
+            new ButtonBuilder({
+              customId: BUTTON_IDS.LOAD_BACKUP_CONFIRM,
+              emoji: '✅',
+              label: 'Confirmar',
+              style: ButtonStyle.Primary
+            }),
+            new ButtonBuilder({
+              customId: BUTTON_IDS.LOAD_BACKUP_CANCEL,
+              emoji: '❌',
+              label: 'Cancelar',
+              style: ButtonStyle.Secondary
+            })
+          ]
+        })
+
+        await int.reply({
+          ephemeral: true,
+          embeds: [ConfirmationLoadBackupEmbed],
+          components: [ConfirmationLoadBackupButtons]
+        })
+
+        client.cache.pendingLoadConfirmation.push({
+          backupId,
+          userId: int.user.id,
+          createdAt: Date.now()
+        })
       }
     })
   }

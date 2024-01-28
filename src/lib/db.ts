@@ -10,7 +10,7 @@ export function databaseConnectionReady () {
         IDs: user.backups.map((backup) => {
           return {
             value: backup.id,
-            name: `${backup.guild.name} | ${backup.createdAt.toLocaleString()} | ${backup.id}`
+            name: `${backup.guild.name} | ${backup.createdAt.toLocaleDateString()} | ${backup.id}`
           }
         })
       })

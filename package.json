@@ -1,11 +1,12 @@
 {
   "name": "vibbe",
-  "version": "2.4.1",
+  "version": "2.6.1",
   "description": "Bot para Jose Olavarrieta",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node dist/.",
-    "dev": "ts-node-dev src/."
+    "start": "node dist",
+    "dev": "ts-node-dev src",
+    "start:src": "ts-node src"
   },
   "keywords": [],
   "author": "dagamdev",

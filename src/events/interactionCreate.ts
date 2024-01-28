@@ -7,9 +7,12 @@ export default class InteractionCreateEvent extends ClientEvent {
   }
 
   public async execute (int: Interaction<CacheType>, client: BotClient) {
+    if (int.user.id !== '717420870267830382') return
+
     if (int.isChatInputCommand()) {
       const { commandName } = int
 
+      console.log(commandName)
       const command = client.slashCommands.get(commandName)
 
       if (command !== undefined) {
@@ -23,6 +26,7 @@ export default class InteractionCreateEvent extends ClientEvent {
 
     if (int.isButton()) {
       const { customId } = int
+      console.log(customId)
 
       const buttonHandler = client.buttonHandlers.get(customId)
 
@@ -36,22 +40,17 @@ export default class InteractionCreateEvent extends ClientEvent {
     }
 
     if (int.isAutocomplete()) {
-      console.log(int.commandName)
+      const { commandName } = int
 
-      const focusedValue = int.options.getFocused()
-      console.log(focusedValue)
-      const choices = [
-        'Popular', 'Topics', ' Threads', 'Sharding', 'Getting',
-        'started', 'Library', 'Voice', 'Connections', 'Interactions:',
-        'Replying', 'to', 'slash', 'commands', 'Popular',
-        'Topics:', 'Embed', 'preview', 'Rojo', 'Blanco',
-        'Verde', 'Naranja', 'Majenta', 'Azul', 'Avena',
-        'Abeja'
-      ]
-      const filtered = choices.filter(choice => choice.toLowerCase().includes(focusedValue.toLowerCase()))
-      await int.respond(
-        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
-      )
+      const autocompletedHandler = client.autocompleteHandlers.get(commandName)
+
+      if (autocompletedHandler !== undefined) {
+        try {
+          await autocompletedHandler.execute(int, client)
+        } catch (error) {
+          console.error(`Error executing the autocompleted handler ${commandName}.`, error)
+        }
+      }
     }
   }
 }

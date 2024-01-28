@@ -17,6 +17,13 @@ const backupIDs: Array<{
   }>
 }> = []
 
+const pendingLoadConfirmation: Array<{
+  userId: string
+  backupId: string
+  createdAt: number
+}> = []
+
 export const CACHE = {
-  backupIDs
+  backupIDs,
+  pendingLoadConfirmation
 }

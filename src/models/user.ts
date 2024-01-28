@@ -1,8 +1,15 @@
-import { model, Schema, Types } from 'mongoose'
+import { model, Schema, type Types } from 'mongoose'
 
-export const UserModel = model('User', new Schema({
+interface User {
+  userId: string
+  backups: Types.ObjectId[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const UserModel = model<User>('User', new Schema({
   userId: { type: String, required: true },
-  backups: [{ type: Types.ObjectId, ref: 'Backup' }]
+  backups: [{ type: Schema.Types.ObjectId, ref: 'Backup' }]
 }, {
   timestamps: true
 }))

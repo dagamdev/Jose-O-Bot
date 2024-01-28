@@ -1,18 +1,20 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
-import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction } from 'discord.js'
-import { BOT_DATA, cache } from './utils/data'
+import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction, type AutocompleteInteraction } from 'discord.js'
+import { BOT_DATA, CACHE } from './utils/data'
 import type { EventNames, ButtonIDKeys } from './types'
 import { connect } from 'mongoose'
 import { BUTTON_IDS } from './utils/constants'
+import { databaseConnectionReady } from './lib/db'
 
 const rootFolder = __dirname.slice(__dirname.lastIndexOf(path.sep) + 1)
 
 export class BotClient extends Client {
   public readonly data = BOT_DATA
-  public cache = cache
+  public cache = CACHE
   public slashCommands = new Collection<string, ClientSlashCommand>()
-  public buttonHandlers = new Map<string, ClientButtonInteraction>()
+  public buttonHandlers = new Collection<string, ClientButtonInteraction>()
+  public autocompleteHandlers = new Collection<string, ClientAutocompleteInteraction>()
 
   constructor () {
     super({
@@ -30,6 +32,8 @@ export class BotClient extends Client {
         console.error('❌ Process error: ', error)
       })
 
+      databaseConnectionReady()
+
       // ? Load events
       readdirSync(`./${rootFolder}/events/`).forEach(async file => {
         const { default: Constructor } = await import(`../${rootFolder}/events/${file}`)
@@ -41,13 +45,14 @@ export class BotClient extends Client {
 
       this.loadInteractions('chatInput', this.slashCommands, (data) => data.struct.name)
       this.loadInteractions('button', this.buttonHandlers, (data) => BUTTON_IDS[data.buttonIDKey])
+      this.loadInteractions('autocomplete', this.autocompleteHandlers, (data) => data.commandName)
       this.login(token)
     } catch (error) {
       console.log('🔴 An error occurred while starting the bot', error)
     }
   }
 
-  private loadInteractions <T = any> (interactionFolder: string, Group: Map<string, T>, getKey: (data: T) => string) {
+  private loadInteractions <T = any> (interactionFolder: string, Group: Collection<string, T>, getKey: (data: T) => string) {
     readdirSync(`./${rootFolder}/interactions/${interactionFolder}/`).forEach(async file => {
       const Constructor = (await import(`../${rootFolder}/interactions/${interactionFolder}/${file}`)).default
       const element: T = new Constructor()
@@ -98,6 +103,17 @@ export class ClientButtonInteraction {
 
   constructor (buttonIDKey: ButtonIDKeys, execute: (interaction: ButtonInteraction<CacheType>, client: BotClient) => Promise<void>) {
     this.buttonIDKey = buttonIDKey
+    this.execute = execute
+  }
+
+  public execute
+}
+
+export class ClientAutocompleteInteraction {
+  public readonly commandName
+
+  constructor (commandName: string, execute: (interaction: AutocompleteInteraction<CacheType>, client: BotClient) => Promise<void>) {
+    this.commandName = commandName
     this.execute = execute
   }
 

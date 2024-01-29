@@ -37,7 +37,30 @@ const RoleSchema = new Schema<Role>({
   unicodeEmoji: String
 })
 
-interface Channel {
+const PermissionOverwrites = new Schema({
+  id: { type: String, required: true },
+  type: { type: Number, required: true },
+  deny: { type: BigInt, required: true },
+  allow: { type: BigInt, required: true }
+})
+
+interface Message {
+  author: {
+    id: string
+    name: string
+  }
+  content: string
+}
+
+const MessageSchema = new Schema<Message>({
+  author: {
+    id: { type: String, required: true },
+    name: { type: String, required: true }
+  },
+  content: { type: String, required: true }
+})
+
+export interface Channel {
   oldId: string
   name: string
   parentId: string | null
@@ -50,6 +73,13 @@ interface Channel {
   rtcRegion: string | null
   userLimit: number | null
   videoQualityMode: number | null
+  permissionOverwrites: Array<{
+    id: string
+    type: number
+    deny: bigint
+    allow: bigint
+  }> | null
+  messages: Message[]
 }
 
 const ChannelSchema = new Schema<Channel>({
@@ -64,7 +94,9 @@ const ChannelSchema = new Schema<Channel>({
   bitrate: Number,
   rtcRegion: String,
   userLimit: Number,
-  videoQualityMode: Number
+  videoQualityMode: Number,
+  permissionOverwrites: [PermissionOverwrites],
+  messages: [MessageSchema]
 })
 
 export interface Backup {

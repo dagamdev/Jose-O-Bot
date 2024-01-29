@@ -34,6 +34,7 @@ const data_1 = require("./utils/data");
 const mongoose_1 = require("mongoose");
 const constants_1 = require("./utils/constants");
 const db_1 = require("./lib/db");
+const config_1 = require("./utils/config");
 const rootFolder = __dirname.slice(__dirname.lastIndexOf(node_path_1.default.sep) + 1);
 class BotClient extends discord_js_1.Client {
     data = data_1.BOT_DATA;
@@ -52,7 +53,7 @@ class BotClient extends discord_js_1.Client {
             await (0, mongoose_1.connect)(dbUrl);
             console.log('🟢 Connected to the database');
             process.on('unhandledRejection', (error) => {
-                console.error('❌ Process error: ', error);
+                this.manageError('❌ Process error:', error);
             });
             (0, db_1.databaseConnectionReady)();
             // ? Load events
@@ -70,7 +71,7 @@ class BotClient extends discord_js_1.Client {
             this.login(token);
         }
         catch (error) {
-            console.log('🔴 An error occurred while starting the bot', error);
+            this.manageError('🔴 An error occurred while starting the bot', error);
         }
     }
     loadInteractions(interactionFolder, Group, getKey) {
@@ -79,6 +80,24 @@ class BotClient extends discord_js_1.Client {
             const element = new Constructor();
             Group.set(getKey(element), element);
         });
+    }
+    manageError(message, error) {
+        if (error instanceof Error) {
+            console.error(message, error.name, error.message, error.cause);
+        }
+        else {
+            console.error(message, error);
+        }
+        if (config_1.IS_DEVELOPMENT !== undefined)
+            return;
+        const channel = this.getChannel(constants_1.CHANNEL_IDS.LOG);
+        if (channel !== undefined && channel.isTextBased()) {
+            const ErrorLogEmbed = new discord_js_1.EmbedBuilder({
+                title: '❓ Error',
+                description: `${message} ${error}`.slice(0, 4000)
+            }).setColor('Red');
+            channel.send({ embeds: [ErrorLogEmbed] });
+        }
     }
     getGuild(guildId) {
         return this.guilds.cache.get(guildId);

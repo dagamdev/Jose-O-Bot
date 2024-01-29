@@ -6,7 +6,7 @@ class ReadyEvent extends client_1.ClientEvent {
         super('error', true);
     }
     async execute(err, client) {
-        console.error('Error event', err.name, err.message, err.cause);
+        client.manageError('❗ Error event:', err);
     }
 }
 exports.default = ReadyEvent;

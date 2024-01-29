@@ -6,7 +6,7 @@ class ReadyEvent extends client_1.ClientEvent {
         super('shardError', true);
     }
     async execute(err, shardId, client) {
-        console.error(`Shard ID: ${shardId}`, err.name, err.message, err.cause);
+        client.manageError(`❓ Shard ID: ${shardId}`, err.name);
     }
 }
 exports.default = ReadyEvent;

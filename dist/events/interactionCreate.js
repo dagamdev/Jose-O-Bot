@@ -6,8 +6,6 @@ class InteractionCreateEvent extends client_1.ClientEvent {
         super('interactionCreate');
     }
     async execute(int, client) {
-        if (int.user.id !== '717420870267830382')
-            return;
         if (int.isChatInputCommand()) {
             const { commandName } = int;
             const command = client.slashCommands.get(commandName);
@@ -16,7 +14,7 @@ class InteractionCreateEvent extends client_1.ClientEvent {
                     await command.execute(int, client);
                 }
                 catch (error) {
-                    console.error(`Error executing the command ${commandName}.`, error);
+                    client.manageError(`🔄️ Error executing the command ${commandName}.`, error);
                 }
             }
         }
@@ -28,7 +26,7 @@ class InteractionCreateEvent extends client_1.ClientEvent {
                     await buttonHandler.execute(int, client);
                 }
                 catch (error) {
-                    console.error(`Error executing the button handler ${customId}.`, error);
+                    client.manageError(`🔄️ Error executing the button handler ${customId}.`, error);
                 }
             }
         }
@@ -40,7 +38,7 @@ class InteractionCreateEvent extends client_1.ClientEvent {
                     await autocompletedHandler.execute(int, client);
                 }
                 catch (error) {
-                    console.error(`Error executing the autocompleted handler ${commandName}.`, error);
+                    client.manageError(`🔄️ Error executing the autocompleted handler ${commandName}.`, error);
                 }
             }
         }

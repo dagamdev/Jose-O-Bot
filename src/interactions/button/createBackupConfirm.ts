@@ -1,5 +1,7 @@
+import { type PermissionOverwrites } from 'discord.js'
 import { ClientButtonInteraction } from '../../client'
 import { BackupModel, UserModel } from '../../models'
+import { type Channel } from '../../models/backup'
 
 export default class CreateBackupConfirm extends ClientButtonInteraction {
   constructor () {
@@ -12,7 +14,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           return
         }
 
-        await int.reply({ ephemeral: true, content: 'Creando respaldo...' })
+        await int.update({ embeds: [], components: [], content: 'Creando respaldo...' })
 
         let userData = await UserModel.findOne({ userId: user.id })
         userData ??= await UserModel.create({
@@ -20,7 +22,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
         })
 
         const roles = await guild.roles.fetch()
-        const channels = await guild.channels.fetch()
+        const channels = guild.channels.cache
 
         const mappedRoles = roles.filter(f => !f.managed).map((role) => {
           return {
@@ -36,21 +38,30 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           }
         })
 
-        const mappedChannels: Array<{
-          oldId: string
-          name: string
-          parentId: string
-          position: number
-          type: number
-          nsfw: boolean | null
-          topic: string | null
-          rateLimitPerUser: number | null
-          bitrate: number | null
-          rtcRegion: string | null
-          userLimit: number | null
-          videoQualityMode: number | null
-        }> = []
-        channels.filter(f => f !== null).forEach((ch: any) => {
+        const mappedChannels: Channel[] = []
+        for (const data of channels.filter(f => f !== null)) {
+          const channel = data[1]
+          const ch: any = channel
+          const messagesData = []
+
+          if (channel.isTextBased()) {
+            const messages = await channel.messages.fetch()
+
+            for (const msgData of messages) {
+              const msg = msgData[1]
+
+              if (msg.content.length !== 0) {
+                messagesData.unshift({
+                  author: {
+                    id: msg.author.id,
+                    name: msg.author.displayName
+                  },
+                  content: msg.content
+                })
+              }
+            }
+          }
+
           mappedChannels.push({
             oldId: ch.id,
             name: ch.name,
@@ -63,8 +74,17 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
             bitrate: ch.bitrate,
             rtcRegion: ch.rtcRegion,
             userLimit: ch.userLimit,
-            videoQualityMode: ch.videoQualityMode
+            videoQualityMode: ch.videoQualityMode,
+            permissionOverwrites: ch.permissionOverwrites.cache.map((p: PermissionOverwrites) => ({
+              id: p.id,
+              type: p.type,
+              deny: p.deny.bitfield,
+              allow: p.allow.bitfield
+            })),
+            messages: messagesData
           })
+        }
+        channels.filter(f => f !== null).forEach((ch: any) => {
         })
 
         const newBackup = await BackupModel.create({
@@ -98,7 +118,6 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
         }
 
         await int.editReply({ content: `**Respaldo creado**\nID del respaldo: \`\`${newBackup.id}\`\`` })
-        // await int.update({ embeds: [], components: [], content: 'Creando respaldo del servidor...' })
       }
     )
   }

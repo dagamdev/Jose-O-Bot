@@ -41,51 +41,52 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
         const mappedChannels: Channel[] = []
         for (const data of channels.filter(f => f !== null)) {
           const channel = data[1]
-          const ch: any = channel
-          const messagesData = []
 
-          if (channel.isTextBased()) {
-            const messages = await channel.messages.fetch()
+          if (!(userData.ignoreChannels.find(f => f.guildId === guildId)?.channelIDs.some(s => s === channel.id || s === channel.parentId) ?? true)) {
+            const ch: any = channel
+            const messagesData = []
 
-            for (const msgData of messages) {
-              const msg = msgData[1]
+            if (channel.isTextBased()) {
+              const messages = await channel.messages.fetch()
 
-              if (msg.content.length !== 0) {
-                messagesData.unshift({
-                  author: {
-                    id: msg.author.id,
-                    name: msg.author.displayName
-                  },
-                  content: msg.content
-                })
+              for (const msgData of messages) {
+                const msg = msgData[1]
+
+                if (msg.content.length !== 0) {
+                  messagesData.unshift({
+                    author: {
+                      id: msg.author.id,
+                      name: msg.author.displayName
+                    },
+                    content: msg.content
+                  })
+                }
               }
             }
-          }
 
-          mappedChannels.push({
-            oldId: ch.id,
-            name: ch.name,
-            parentId: ch.parentId,
-            position: ch.position,
-            type: ch.type,
-            nsfw: ch.nsfw,
-            topic: ch.topic,
-            rateLimitPerUser: ch.rateLimitPerUser,
-            bitrate: ch.bitrate,
-            rtcRegion: ch.rtcRegion,
-            userLimit: ch.userLimit,
-            videoQualityMode: ch.videoQualityMode,
-            permissionOverwrites: ch.permissionOverwrites.cache.map((p: PermissionOverwrites) => ({
-              id: p.id,
-              type: p.type,
-              deny: p.deny.bitfield,
-              allow: p.allow.bitfield
-            })),
-            messages: messagesData
-          })
+            mappedChannels.push({
+              oldId: ch.id,
+              name: ch.name,
+              parentId: ch.parentId,
+              position: ch.position,
+              type: ch.type,
+              nsfw: ch.nsfw,
+              topic: ch.topic,
+              rateLimitPerUser: ch.rateLimitPerUser,
+              bitrate: ch.bitrate,
+              rtcRegion: ch.rtcRegion,
+              userLimit: ch.userLimit,
+              videoQualityMode: ch.videoQualityMode,
+              permissionOverwrites: ch.permissionOverwrites.cache.map((p: PermissionOverwrites) => ({
+                id: p.id,
+                type: p.type,
+                deny: p.deny.bitfield,
+                allow: p.allow.bitfield
+              })),
+              messages: messagesData
+            })
+          }
         }
-        channels.filter(f => f !== null).forEach((ch: any) => {
-        })
 
         const newBackup = await BackupModel.create({
           user: userData._id,

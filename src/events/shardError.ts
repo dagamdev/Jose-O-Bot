@@ -6,6 +6,6 @@ export default class ReadyEvent extends ClientEvent {
   }
 
   public async execute (err: Error, shardId: number, client: BotClient) {
-    console.error(`Shard ID: ${shardId}`, err.name, err.message, err.cause)
+    client.manageError(`❓ Shard ID: ${shardId}`, err.name)
   }
 }

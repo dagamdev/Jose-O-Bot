@@ -6,6 +6,6 @@ export default class ReadyEvent extends ClientEvent {
   }
 
   public async execute (err: Error, client: BotClient) {
-    console.error('Error event', err.name, err.message, err.cause)
+    client.manageError('❗ Error event:', err)
   }
 }

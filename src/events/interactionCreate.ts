@@ -7,8 +7,6 @@ export default class InteractionCreateEvent extends ClientEvent {
   }
 
   public async execute (int: Interaction<CacheType>, client: BotClient) {
-    if (int.user.id !== '717420870267830382') return
-
     if (int.isChatInputCommand()) {
       const { commandName } = int
 
@@ -18,7 +16,7 @@ export default class InteractionCreateEvent extends ClientEvent {
         try {
           await command.execute(int, client)
         } catch (error) {
-          console.error(`Error executing the command ${commandName}.`, error)
+          client.manageError(`🔄️ Error executing the command ${commandName}.`, error)
         }
       }
     }
@@ -32,7 +30,7 @@ export default class InteractionCreateEvent extends ClientEvent {
         try {
           await buttonHandler.execute(int, client)
         } catch (error) {
-          console.error(`Error executing the button handler ${customId}.`, error)
+          client.manageError(`🔄️ Error executing the button handler ${customId}.`, error)
         }
       }
     }
@@ -46,7 +44,7 @@ export default class InteractionCreateEvent extends ClientEvent {
         try {
           await autocompletedHandler.execute(int, client)
         } catch (error) {
-          console.error(`Error executing the autocompleted handler ${commandName}.`, error)
+          client.manageError(`🔄️ Error executing the autocompleted handler ${commandName}.`, error)
         }
       }
     }

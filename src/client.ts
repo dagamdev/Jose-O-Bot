@@ -1,11 +1,12 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
-import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction, type AutocompleteInteraction } from 'discord.js'
+import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction, type AutocompleteInteraction, EmbedBuilder } from 'discord.js'
 import { BOT_DATA, CACHE } from './utils/data'
 import type { EventNames, ButtonIDKeys } from './types'
 import { connect } from 'mongoose'
-import { BUTTON_IDS } from './utils/constants'
+import { BUTTON_IDS, CHANNEL_IDS } from './utils/constants'
 import { databaseConnectionReady } from './lib/db'
+import { IS_DEVELOPMENT } from './utils/config'
 
 const rootFolder = __dirname.slice(__dirname.lastIndexOf(path.sep) + 1)
 
@@ -29,7 +30,7 @@ export class BotClient extends Client {
       console.log('🟢 Connected to the database')
 
       process.on('unhandledRejection', (error: Error) => {
-        console.error('❌ Process error: ', error)
+        this.manageError('❌ Process error:', error)
       })
 
       databaseConnectionReady()
@@ -48,7 +49,7 @@ export class BotClient extends Client {
       this.loadInteractions('autocomplete', this.autocompleteHandlers, (data) => data.commandName)
       this.login(token)
     } catch (error) {
-      console.log('🔴 An error occurred while starting the bot', error)
+      this.manageError('🔴 An error occurred while starting the bot', error)
     }
   }
 
@@ -59,6 +60,25 @@ export class BotClient extends Client {
 
       Group.set(getKey(element), element)
     })
+  }
+
+  public manageError (message: string, error: unknown) {
+    if (error instanceof Error) {
+      console.error(message, error.name, error.message, error.cause)
+    } else {
+      console.error(message, error)
+    }
+
+    if (IS_DEVELOPMENT !== undefined) return
+
+    const channel = this.getChannel(CHANNEL_IDS.LOG)
+    if (channel !== undefined && channel.isTextBased()) {
+      const ErrorLogEmbed = new EmbedBuilder({
+        title: '❓ Error',
+        description: `${message} ${error as string}`.slice(0, 4000)
+      }).setColor('Red')
+      channel.send({ embeds: [ErrorLogEmbed] })
+    }
   }
 
   public getGuild (guildId: string) {

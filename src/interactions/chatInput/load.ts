@@ -24,7 +24,7 @@ export default class LoadSlashCommand extends ClientSlashCommand {
       )
       .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
       .toJSON(),
-    async (int, client) => {
+    async (int) => {
       const { options } = int
       const subCommandName = int.options.getSubcommand(true)
 
@@ -33,7 +33,10 @@ export default class LoadSlashCommand extends ClientSlashCommand {
 
         const ConfirmationLoadBackupEmbed = new EmbedBuilder({
           title: '⚠️ ¿Estás seguro de que deseas cargar el respaldo?',
-          description: 'Se eliminarán todos los canales y roles actuales, siendo reemplazados por los del respaldo seleccionado.'
+          description: 'Se eliminarán todos los canales y roles actuales, siendo reemplazados por los del respaldo seleccionado.',
+          footer: {
+            text: `ID del respaldo: ${backupId}`
+          }
         }).setColor('Yellow')
 
         const ConfirmationLoadBackupButtons = new ActionRowBuilder<ButtonBuilder>({
@@ -42,13 +45,13 @@ export default class LoadSlashCommand extends ClientSlashCommand {
               customId: BUTTON_IDS.LOAD_BACKUP_CONFIRM,
               emoji: '✅',
               label: 'Confirmar',
-              style: ButtonStyle.Primary
+              style: ButtonStyle.Success
             }),
             new ButtonBuilder({
               customId: BUTTON_IDS.LOAD_BACKUP_CANCEL,
               emoji: '❌',
               label: 'Cancelar',
-              style: ButtonStyle.Secondary
+              style: ButtonStyle.Danger
             })
           ]
         })
@@ -57,12 +60,6 @@ export default class LoadSlashCommand extends ClientSlashCommand {
           ephemeral: true,
           embeds: [ConfirmationLoadBackupEmbed],
           components: [ConfirmationLoadBackupButtons]
-        })
-
-        client.cache.pendingLoadConfirmation.push({
-          backupId,
-          userId: int.user.id,
-          createdAt: Date.now()
         })
       }
     })

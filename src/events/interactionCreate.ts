@@ -12,7 +12,6 @@ export default class InteractionCreateEvent extends ClientEvent {
     if (int.isChatInputCommand()) {
       const { commandName } = int
 
-      console.log(commandName)
       const command = client.slashCommands.get(commandName)
 
       if (command !== undefined) {
@@ -26,7 +25,6 @@ export default class InteractionCreateEvent extends ClientEvent {
 
     if (int.isButton()) {
       const { customId } = int
-      console.log(customId)
 
       const buttonHandler = client.buttonHandlers.get(customId)
 

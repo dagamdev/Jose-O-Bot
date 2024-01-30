@@ -6,6 +6,7 @@ const lib_1 = require("../lib");
 const GuildSchema = new mongoose_1.Schema({
     id: { type: String, required: true },
     name: { type: String, required: true },
+    icon: Buffer,
     description: String
 });
 const RoleSchema = new mongoose_1.Schema({
@@ -28,9 +29,14 @@ const PermissionOverwrites = new mongoose_1.Schema({
 const MessageSchema = new mongoose_1.Schema({
     author: {
         id: { type: String, required: true },
-        name: { type: String, required: true }
+        name: { type: String, required: true },
+        avatar: String
     },
-    content: { type: String, required: true }
+    content: String,
+    attachments: [{
+            name: { type: String, required: true },
+            data: { type: Buffer, required: true }
+        }]
 });
 const ChannelSchema = new mongoose_1.Schema({
     oldId: { type: String, required: true },

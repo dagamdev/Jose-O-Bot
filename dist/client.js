@@ -84,6 +84,7 @@ class BotClient extends discord_js_1.Client {
     manageError(message, error) {
         if (error instanceof Error) {
             console.error(message, error.name, error.message, error.cause);
+            console.error(error);
         }
         else {
             console.error(message, error);

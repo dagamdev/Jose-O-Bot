@@ -5,7 +5,7 @@ const client_1 = require("../../client");
 const models_1 = require("../../models");
 class LoadBackupConfirm extends client_1.ClientButtonInteraction {
     constructor() {
-        super('LOAD_BACKUP_CONFIRM', async (int) => {
+        super('LOAD_BACKUP_CONFIRM', async (int, client) => {
             const { guild, guildId } = int;
             const backupId = int.message.embeds[0].footer?.text.split(/ +/g).pop();
             if (backupId === undefined || guild === null) {
@@ -26,6 +26,7 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
             }
             await guild.edit({
                 name: backupData.guild.name,
+                icon: backupData.guild.icon,
                 description: backupData.guild.description
             });
             const roles = await guild.roles.fetch();
@@ -96,19 +97,29 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                 if (channelData.messages.length !== 0 && newChannel.isTextBased() && !(newChannel instanceof discord_js_1.ThreadChannel)) {
                     const webhook = await newChannel.createWebhook({ name: 'deceiver' });
                     for (const msg of channelData.messages) {
-                        await webhook.send({ username: msg.author.name, content: msg.content });
+                        await webhook.send({
+                            avatarURL: `https://cdn.discordapp.com/avatars/717420870267830382/${msg.author.avatar}.webp?size=128`,
+                            username: msg.author.name,
+                            content: msg.content ?? undefined,
+                            files: msg.attachments.map(m => m.data)
+                        });
                     }
                     await webhook.delete();
                 }
             }
             for (const fsChannel of backupData.channels.filter(f => f.parentId === null)) {
                 const newChannel = await guild.channels.create(getChannelCreationObject(fsChannel));
-                await sendWebhookMessages(fsChannel, newChannel);
-                if (fsChannel.type === discord_js_1.ChannelType.GuildCategory) {
-                    for (const scChannel of backupData.channels.filter(f => f.parentId === fsChannel.oldId)) {
-                        const newChildChannel = await guild.channels.create(getChannelCreationObject(scChannel, newChannel));
-                        await sendWebhookMessages(scChannel, newChildChannel);
+                try {
+                    await sendWebhookMessages(fsChannel, newChannel);
+                    if (fsChannel.type === discord_js_1.ChannelType.GuildCategory) {
+                        for (const scChannel of backupData.channels.filter(f => f.parentId === fsChannel.oldId)) {
+                            const newChildChannel = await guild.channels.create(getChannelCreationObject(scChannel, newChannel));
+                            await sendWebhookMessages(scChannel, newChildChannel);
+                        }
                     }
+                }
+                catch (error) {
+                    client.manageError('Error al enviar el webhook', error);
                 }
             }
         });

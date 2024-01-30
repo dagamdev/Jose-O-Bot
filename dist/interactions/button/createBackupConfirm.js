@@ -15,6 +15,14 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
             userData ??= await models_1.UserModel.create({
                 userId: user.id
             });
+            let icon;
+            if (guild.icon !== null) {
+                const res = await fetch(guild.icon);
+                if (res.status !== 200)
+                    return;
+                const arrayBuffer = await res.arrayBuffer();
+                icon = Buffer.from(arrayBuffer);
+            }
             const roles = await guild.roles.fetch();
             const channels = guild.channels.cache;
             const mappedRoles = roles.filter(f => !f.managed).map((role) => {
@@ -33,52 +41,68 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
             const mappedChannels = [];
             for (const data of channels.filter(f => f !== null)) {
                 const channel = data[1];
+                const ch = channel;
+                const messagesData = [];
                 if (!(userData.ignoreChannels.find(f => f.guildId === guildId)?.channelIDs.some(s => s === channel.id || s === channel.parentId) ?? true)) {
-                    const ch = channel;
-                    const messagesData = [];
                     if (channel.isTextBased()) {
                         const messages = await channel.messages.fetch();
                         for (const msgData of messages) {
                             const msg = msgData[1];
-                            if (msg.content.length !== 0) {
+                            if (msg.content.length !== 0 || msg.attachments.size !== 0) {
+                                const attachments = [];
+                                for (const atData of msg.attachments) {
+                                    const at = atData[1];
+                                    const res = await fetch(at.url);
+                                    if (res.status !== 200)
+                                        continue;
+                                    const arrayBuffer = await res.arrayBuffer();
+                                    const buffer = Buffer.from(arrayBuffer);
+                                    attachments.push({
+                                        name: at.name,
+                                        data: buffer
+                                    });
+                                }
                                 messagesData.unshift({
                                     author: {
                                         id: msg.author.id,
-                                        name: msg.author.displayName
+                                        name: msg.author.displayName,
+                                        avatar: msg.author.avatar
                                     },
-                                    content: msg.content
+                                    content: msg.content,
+                                    attachments
                                 });
                             }
                         }
                     }
-                    mappedChannels.push({
-                        oldId: ch.id,
-                        name: ch.name,
-                        parentId: ch.parentId,
-                        position: ch.position,
-                        type: ch.type,
-                        nsfw: ch.nsfw,
-                        topic: ch.topic,
-                        rateLimitPerUser: ch.rateLimitPerUser,
-                        bitrate: ch.bitrate,
-                        rtcRegion: ch.rtcRegion,
-                        userLimit: ch.userLimit,
-                        videoQualityMode: ch.videoQualityMode,
-                        permissionOverwrites: ch.permissionOverwrites.cache.map((p) => ({
-                            id: p.id,
-                            type: p.type,
-                            deny: p.deny.bitfield,
-                            allow: p.allow.bitfield
-                        })),
-                        messages: messagesData
-                    });
                 }
+                mappedChannels.push({
+                    oldId: ch.id,
+                    name: ch.name,
+                    parentId: ch.parentId,
+                    position: ch.position,
+                    type: ch.type,
+                    nsfw: ch.nsfw,
+                    topic: ch.topic,
+                    rateLimitPerUser: ch.rateLimitPerUser,
+                    bitrate: ch.bitrate,
+                    rtcRegion: ch.rtcRegion,
+                    userLimit: ch.userLimit,
+                    videoQualityMode: ch.videoQualityMode,
+                    permissionOverwrites: ch.permissionOverwrites.cache.map((p) => ({
+                        id: p.id,
+                        type: p.type,
+                        deny: p.deny.bitfield,
+                        allow: p.allow.bitfield
+                    })),
+                    messages: messagesData
+                });
             }
             const newBackup = await models_1.BackupModel.create({
                 user: userData._id,
                 guild: {
                     id: guildId,
                     name: guild.name,
+                    icon,
                     description: guild.description
                 },
                 roles: mappedRoles,

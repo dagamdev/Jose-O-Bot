@@ -1,6 +1,6 @@
 import { type PermissionOverwrites } from 'discord.js'
 import { ClientButtonInteraction } from '../../client'
-import { BackupModel, UserModel } from '../../models'
+import { BackupModel, ImageModel, UserModel } from '../../models'
 import { type Channel } from '../../models/backup'
 
 export default class CreateBackupConfirm extends ClientButtonInteraction {
@@ -29,7 +29,9 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           if (res.status !== 200) return
 
           const arrayBuffer = await res.arrayBuffer()
-          icon = Buffer.from(arrayBuffer)
+          icon = await ImageModel.create({
+            data: Buffer.from(arrayBuffer)
+          })
         }
 
         const roles = await guild.roles.fetch()
@@ -49,6 +51,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           }
         })
 
+        const avatars: string[] = []
         const mappedChannels: Channel[] = []
         for (const data of channels.filter(f => f !== null)) {
           const channel = data[1]
@@ -64,6 +67,22 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
 
                 if (msg.content.length !== 0 || msg.attachments.size !== 0) {
                   const attachments = []
+                  let avatarRef = null
+
+                  if (avatars.every(e => e !== msg.author.id)) {
+                    const avatarUrl = msg.author.displayAvatarURL({ size: 128 })
+
+                    const res = await fetch(avatarUrl)
+                    if (res.status === 200) {
+                      const arrayBuffer = await res.arrayBuffer()
+                      const buffer = Buffer.from(arrayBuffer)
+                      const newAvatar = await ImageModel.create({
+                        data: buffer
+                      })
+                      avatarRef = newAvatar._id
+                      avatars.push(msg.author.id)
+                    }
+                  }
 
                   for (const atData of msg.attachments) {
                     const at = atData[1]
@@ -75,7 +94,8 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
 
                     attachments.push({
                       name: at.name,
-                      data: buffer
+                      attachment: buffer,
+                      description: at.description
                     })
                   }
 
@@ -83,7 +103,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
                     author: {
                       id: msg.author.id,
                       name: msg.author.displayName,
-                      avatar: msg.author.avatar
+                      avatar: avatarRef
                     },
                     content: msg.content,
                     attachments
@@ -121,7 +141,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           guild: {
             id: guildId,
             name: guild.name,
-            icon,
+            icon: icon?._id,
             description: guild.description
           },
           roles: mappedRoles,

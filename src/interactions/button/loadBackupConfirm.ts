@@ -1,6 +1,6 @@
 import { ChannelType, ThreadChannel, type GuildBasedChannel } from 'discord.js'
 import { ClientButtonInteraction } from '../../client'
-import { BackupModel } from '../../models'
+import { BackupModel, ImageModel } from '../../models'
 import { type Channel } from '../../models/backup'
 
 export default class LoadBackupConfirm extends ClientButtonInteraction {
@@ -31,9 +31,11 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
           return
         }
 
+        const guildImage = await ImageModel.findById(backupData.guild.icon)
+
         await guild.edit({
           name: backupData.guild.name,
-          icon: backupData.guild.icon,
+          icon: guildImage?.data,
           description: backupData.guild.description
         })
 
@@ -108,16 +110,51 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
           }
         }
 
+        const avatars = new Map<string, string | null>()
+
         async function sendWebhookMessages (channelData: Channel, newChannel: GuildBasedChannel) {
           if (channelData.messages.length !== 0 && newChannel.isTextBased() && !(newChannel instanceof ThreadChannel)) {
-            const webhook = await newChannel.createWebhook({ name: 'deceiver' })
+            const firstAuthorId = channelData.messages[0].author.id
+            const avatarUrl = avatars.get(firstAuthorId)
+
+            let avatar
+
+            if (avatarUrl === undefined) {
+              const autorImage = await ImageModel.findById(firstAuthorId)
+              avatar = autorImage?.data
+            } else avatar = avatarUrl
+
+            const webhook = await newChannel.createWebhook({
+              name: 'deceiver',
+              avatar
+            })
+
+            if (avatarUrl === undefined) {
+              avatars.set(firstAuthorId, webhook.avatarURL({ size: 128 }))
+            }
 
             for (const msg of channelData.messages) {
+              let avatarUrl = avatars.get(msg.author.id)
+
+              if (avatarUrl === undefined) {
+                const authorImage = await ImageModel.findById(msg.author.id)
+                const updatedWebhook = await webhook.edit({
+                  avatar: authorImage?.data
+                })
+
+                avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined
+                avatars.set(msg.author.id, avatarUrl ?? null)
+              }
+
               await webhook.send({
-                avatarURL: `https://cdn.discordapp.com/avatars/717420870267830382/${msg.author.avatar}.webp?size=128`,
+                avatarURL: avatarUrl ?? undefined,
                 username: msg.author.name,
                 content: msg.content ?? undefined,
-                files: msg.attachments.map(m => m.data)
+                files: msg.attachments.map((m) => ({
+                  name: m.name,
+                  attachment: m.attachment,
+                  description: m.description ?? undefined
+                }))
               })
             }
 

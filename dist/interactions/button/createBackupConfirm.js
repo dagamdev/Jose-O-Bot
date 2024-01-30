@@ -52,45 +52,46 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
                         const messages = await channel.messages.fetch();
                         for (const msgData of messages) {
                             const msg = msgData[1];
-                            if (msg.content.length !== 0 || msg.attachments.size !== 0) {
-                                const attachments = [];
-                                let avatarRef = null;
-                                if (avatars.every(e => e !== msg.author.id)) {
-                                    const avatarUrl = msg.author.displayAvatarURL({ size: 128 });
-                                    const res = await fetch(avatarUrl);
-                                    if (res.status === 200) {
-                                        const arrayBuffer = await res.arrayBuffer();
-                                        const buffer = Buffer.from(arrayBuffer);
-                                        const newAvatar = await models_1.ImageModel.create({
-                                            data: buffer
-                                        });
-                                        avatarRef = newAvatar._id;
-                                        avatars.push(msg.author.id);
-                                    }
-                                }
-                                for (const atData of msg.attachments) {
-                                    const at = atData[1];
-                                    const res = await fetch(at.url);
-                                    if (res.status !== 200)
-                                        continue;
+                            if (msg.content.length === 0 && msg.attachments.size === 0)
+                                continue;
+                            const attachments = [];
+                            let avatarRef = null;
+                            if (avatars.every(e => e !== msg.author.id)) {
+                                const avatarUrl = msg.author.displayAvatarURL({ size: 128 });
+                                const res = await fetch(avatarUrl);
+                                if (res.status === 200) {
                                     const arrayBuffer = await res.arrayBuffer();
                                     const buffer = Buffer.from(arrayBuffer);
-                                    attachments.push({
-                                        name: at.name,
-                                        attachment: buffer,
-                                        description: at.description
+                                    const newAvatar = await models_1.ImageModel.create({
+                                        data: buffer
                                     });
+                                    avatarRef = newAvatar._id;
+                                    console.log(avatarRef);
+                                    avatars.push(msg.author.id);
                                 }
-                                messagesData.unshift({
-                                    author: {
-                                        id: msg.author.id,
-                                        name: msg.author.displayName,
-                                        avatar: avatarRef
-                                    },
-                                    content: msg.content,
-                                    attachments
+                            }
+                            for (const atData of msg.attachments) {
+                                const at = atData[1];
+                                const res = await fetch(at.url);
+                                if (res.status !== 200)
+                                    continue;
+                                const arrayBuffer = await res.arrayBuffer();
+                                const buffer = Buffer.from(arrayBuffer);
+                                attachments.push({
+                                    name: at.name,
+                                    attachment: buffer,
+                                    description: at.description
                                 });
                             }
+                            messagesData.unshift({
+                                author: {
+                                    id: msg.author.id,
+                                    name: msg.author.displayName,
+                                    avatar: avatarRef
+                                },
+                                content: msg.content,
+                                attachments
+                            });
                         }
                     }
                 }

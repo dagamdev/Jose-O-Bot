@@ -6,7 +6,7 @@ import { type Channel } from '../../models/backup'
 export default class LoadBackupConfirm extends ClientButtonInteraction {
   constructor () {
     super('LOAD_BACKUP_CONFIRM',
-      async (int) => {
+      async (int, client) => {
         const { guild, guildId } = int
 
         const backupId = int.message.embeds[0].footer?.text.split(/ +/g).pop()
@@ -33,6 +33,7 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
 
         await guild.edit({
           name: backupData.guild.name,
+          icon: backupData.guild.icon,
           description: backupData.guild.description
         })
 
@@ -112,7 +113,12 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
             const webhook = await newChannel.createWebhook({ name: 'deceiver' })
 
             for (const msg of channelData.messages) {
-              await webhook.send({ username: msg.author.name, content: msg.content })
+              await webhook.send({
+                avatarURL: `https://cdn.discordapp.com/avatars/717420870267830382/${msg.author.avatar}.webp?size=128`,
+                username: msg.author.name,
+                content: msg.content ?? undefined,
+                files: msg.attachments.map(m => m.data)
+              })
             }
 
             await webhook.delete()
@@ -122,14 +128,18 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
         for (const fsChannel of backupData.channels.filter(f => f.parentId === null)) {
           const newChannel = await guild.channels.create(getChannelCreationObject(fsChannel)) as GuildBasedChannel
 
-          await sendWebhookMessages(fsChannel, newChannel)
+          try {
+            await sendWebhookMessages(fsChannel, newChannel)
 
-          if (fsChannel.type === ChannelType.GuildCategory) {
-            for (const scChannel of backupData.channels.filter(f => f.parentId === fsChannel.oldId)) {
-              const newChildChannel = await guild.channels.create(getChannelCreationObject(scChannel, newChannel)) as GuildBasedChannel
+            if (fsChannel.type === ChannelType.GuildCategory) {
+              for (const scChannel of backupData.channels.filter(f => f.parentId === fsChannel.oldId)) {
+                const newChildChannel = await guild.channels.create(getChannelCreationObject(scChannel, newChannel)) as GuildBasedChannel
 
-              await sendWebhookMessages(scChannel, newChildChannel)
+                await sendWebhookMessages(scChannel, newChildChannel)
+              }
             }
+          } catch (error) {
+            client.manageError('Error al enviar el webhook', error)
           }
         }
       }

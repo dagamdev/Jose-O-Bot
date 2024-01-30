@@ -24,9 +24,10 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                 });
                 return;
             }
+            const guildImage = await models_1.ImageModel.findById(backupData.guild.icon);
             await guild.edit({
                 name: backupData.guild.name,
-                icon: backupData.guild.icon,
+                icon: guildImage?.data,
                 description: backupData.guild.description
             });
             const roles = await guild.roles.fetch();
@@ -93,15 +94,44 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                     }) ?? undefined
                 };
             }
+            const avatars = new Map();
             async function sendWebhookMessages(channelData, newChannel) {
                 if (channelData.messages.length !== 0 && newChannel.isTextBased() && !(newChannel instanceof discord_js_1.ThreadChannel)) {
-                    const webhook = await newChannel.createWebhook({ name: 'deceiver' });
+                    const firstAuthorId = channelData.messages[0].author.id;
+                    const avatarUrl = avatars.get(firstAuthorId);
+                    let avatar;
+                    if (avatarUrl === undefined) {
+                        const autorImage = await models_1.ImageModel.findById(firstAuthorId);
+                        avatar = autorImage?.data;
+                    }
+                    else
+                        avatar = avatarUrl;
+                    const webhook = await newChannel.createWebhook({
+                        name: 'deceiver',
+                        avatar
+                    });
+                    if (avatarUrl === undefined) {
+                        avatars.set(firstAuthorId, webhook.avatarURL({ size: 128 }));
+                    }
                     for (const msg of channelData.messages) {
+                        let avatarUrl = avatars.get(msg.author.id);
+                        if (avatarUrl === undefined) {
+                            const authorImage = await models_1.ImageModel.findById(msg.author.id);
+                            const updatedWebhook = await webhook.edit({
+                                avatar: authorImage?.data
+                            });
+                            avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined;
+                            avatars.set(msg.author.id, avatarUrl ?? null);
+                        }
                         await webhook.send({
-                            avatarURL: `https://cdn.discordapp.com/avatars/717420870267830382/${msg.author.avatar}.webp?size=128`,
+                            avatarURL: avatarUrl ?? undefined,
                             username: msg.author.name,
                             content: msg.content ?? undefined,
-                            files: msg.attachments.map(m => m.data)
+                            files: msg.attachments.map((m) => ({
+                                name: m.name,
+                                attachment: m.attachment,
+                                description: m.description ?? undefined
+                            }))
                         });
                     }
                     await webhook.delete();

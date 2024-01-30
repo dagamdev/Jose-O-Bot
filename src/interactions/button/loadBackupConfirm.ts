@@ -120,7 +120,7 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
             let avatar
 
             if (avatarUrl === undefined) {
-              const autorImage = await ImageModel.findById(firstAuthorId)
+              const autorImage = await ImageModel.findById(channelData.messages[0].author.avatar)
               avatar = autorImage?.data
             } else avatar = avatarUrl
 
@@ -137,7 +137,7 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
               let avatarUrl = avatars.get(msg.author.id)
 
               if (avatarUrl === undefined) {
-                const authorImage = await ImageModel.findById(msg.author.id)
+                const authorImage = await ImageModel.findById(msg.author.avatar)
                 const updatedWebhook = await webhook.edit({
                   avatar: authorImage?.data
                 })

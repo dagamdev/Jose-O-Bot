@@ -65,6 +65,7 @@ export class BotClient extends Client {
   public manageError (message: string, error: unknown) {
     if (error instanceof Error) {
       console.error(message, error.name, error.message, error.cause)
+      console.error(error)
     } else {
       console.error(message, error)
     }

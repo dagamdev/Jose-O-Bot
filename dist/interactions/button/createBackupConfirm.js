@@ -15,9 +15,10 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
             userData ??= await models_1.UserModel.create({
                 userId: user.id
             });
+            const iconUrl = guild.iconURL({ size: 1024 });
             let icon;
-            if (guild.icon !== null) {
-                const res = await fetch(guild.icon);
+            if (iconUrl !== null) {
+                const res = await fetch(iconUrl);
                 if (res.status !== 200)
                     return;
                 const arrayBuffer = await res.arrayBuffer();

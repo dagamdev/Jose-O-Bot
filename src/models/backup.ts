@@ -4,14 +4,14 @@ import { generateCode } from '../lib'
 interface Guild {
   id: string
   name: string
-  icon: Buffer | null
+  icon: Types.ObjectId | null
   description: string | null
 }
 
 const GuildSchema = new Schema<Guild>({
   id: { type: String, required: true },
   name: { type: String, required: true },
-  icon: Buffer,
+  icon: { type: Schema.Types.ObjectId, ref: 'Image' },
   description: String
 })
 
@@ -50,12 +50,13 @@ interface Message {
   author: {
     id: string
     name: string
-    avatar: string | null
+    avatar: Types.ObjectId | null
   }
   content: string | null
   attachments: Array<{
     name: string
-    data: Buffer
+    description: string | null
+    attachment: Buffer
   }>
 }
 
@@ -63,12 +64,13 @@ const MessageSchema = new Schema<Message>({
   author: {
     id: { type: String, required: true },
     name: { type: String, required: true },
-    avatar: String
+    avatar: { type: Schema.Types.ObjectId, ref: 'Image' }
   },
   content: String,
   attachments: [{
     name: { type: String, required: true },
-    data: { type: Buffer, required: true }
+    description: String,
+    attachment: { type: Buffer, required: true }
   }]
 })
 

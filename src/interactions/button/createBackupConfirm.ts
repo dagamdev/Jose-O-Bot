@@ -2,6 +2,7 @@ import { type PermissionOverwrites } from 'discord.js'
 import { ClientButtonInteraction } from '../../client'
 import { BackupModel, ImageModel, UserModel } from '../../models'
 import { type Channel } from '../../models/backup'
+import { type Types } from 'mongoose'
 
 export default class CreateBackupConfirm extends ClientButtonInteraction {
   constructor () {
@@ -51,26 +52,26 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
           }
         })
 
-        const avatars: string[] = []
+        const avatars = new Map<string, Types.ObjectId>()
         const mappedChannels: Channel[] = []
         for (const data of channels.filter(f => f !== null)) {
           const channel = data[1]
           const ch: any = channel
           const messagesData = []
 
-          if (!(userData.ignoreChannels.find(f => f.guildId === guildId)?.channelIDs.some(s => s === channel.id || s === channel.parentId) ?? true)) {
-            if (channel.isTextBased()) {
-              const messages = await channel.messages.fetch()
+          if (channel.isTextBased()) {
+            const messages = await channel.messages.fetch()
 
+            if (!(userData.ignoreChannels.find(f => f.guildId === guildId)?.channelIDs.some(s => s === channel.id || s === channel.parentId) ?? true)) {
               for (const msgData of messages) {
                 const msg = msgData[1]
 
                 if (msg.content.length === 0 && msg.attachments.size === 0) continue
 
+                let avatar = avatars.get(msg.author.id) ?? null
                 const attachments = []
-                let avatarRef = null
 
-                if (avatars.every(e => e !== msg.author.id)) {
+                if (avatar === null) {
                   const avatarUrl = msg.author.displayAvatarURL({ size: 128 })
 
                   const res = await fetch(avatarUrl)
@@ -80,9 +81,8 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
                     const newAvatar = await ImageModel.create({
                       data: buffer
                     })
-                    avatarRef = newAvatar._id
-                    console.log(avatarRef)
-                    avatars.push(msg.author.id)
+                    avatar = newAvatar._id
+                    avatars.set(msg.author.id, newAvatar._id)
                   }
                 }
 
@@ -105,7 +105,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
                   author: {
                     id: msg.author.id,
                     name: msg.author.displayName,
-                    avatar: avatarRef
+                    avatar
                   },
                   content: msg.content,
                   attachments

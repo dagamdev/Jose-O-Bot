@@ -114,14 +114,16 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
 
         async function sendWebhookMessages (channelData: Channel, newChannel: GuildBasedChannel) {
           if (channelData.messages.length !== 0 && newChannel.isTextBased() && !(newChannel instanceof ThreadChannel)) {
-            const firstAuthorId = channelData.messages[0].author.id
-            const avatarUrl = avatars.get(firstAuthorId)
+            const firstAuthor = channelData.messages[0].author
+            const avatarUrl = avatars.get(firstAuthor.id)
 
             let avatar
 
             if (avatarUrl === undefined) {
-              const autorImage = await ImageModel.findById(channelData.messages[0].author.avatar)
-              avatar = autorImage?.data
+              console.log(firstAuthor.avatar)
+              const authorImage = await ImageModel.findById(firstAuthor.avatar)
+              console.log(authorImage)
+              avatar = authorImage?.data
             } else avatar = avatarUrl
 
             const webhook = await newChannel.createWebhook({
@@ -130,11 +132,13 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
             })
 
             if (avatarUrl === undefined) {
-              avatars.set(firstAuthorId, webhook.avatarURL({ size: 128 }))
+              const webhookAvatar = webhook.avatarURL({ size: 128 })
+              avatars.set(firstAuthor.id, webhookAvatar)
             }
 
             for (const msg of channelData.messages) {
               let avatarUrl = avatars.get(msg.author.id)
+              console.log(avatarUrl)
 
               if (avatarUrl === undefined) {
                 const authorImage = await ImageModel.findById(msg.author.avatar)
@@ -143,6 +147,7 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
                 })
 
                 avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined
+                console.log(avatarUrl)
                 avatars.set(msg.author.id, avatarUrl ?? null)
               }
 

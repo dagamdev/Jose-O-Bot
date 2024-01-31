@@ -97,12 +97,14 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
             const avatars = new Map();
             async function sendWebhookMessages(channelData, newChannel) {
                 if (channelData.messages.length !== 0 && newChannel.isTextBased() && !(newChannel instanceof discord_js_1.ThreadChannel)) {
-                    const firstAuthorId = channelData.messages[0].author.id;
-                    const avatarUrl = avatars.get(firstAuthorId);
+                    const firstAuthor = channelData.messages[0].author;
+                    const avatarUrl = avatars.get(firstAuthor.id);
                     let avatar;
                     if (avatarUrl === undefined) {
-                        const autorImage = await models_1.ImageModel.findById(channelData.messages[0].author.avatar);
-                        avatar = autorImage?.data;
+                        console.log(firstAuthor.avatar);
+                        const authorImage = await models_1.ImageModel.findById(firstAuthor.avatar);
+                        console.log(authorImage);
+                        avatar = authorImage?.data;
                     }
                     else
                         avatar = avatarUrl;
@@ -111,16 +113,19 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                         avatar
                     });
                     if (avatarUrl === undefined) {
-                        avatars.set(firstAuthorId, webhook.avatarURL({ size: 128 }));
+                        const webhookAvatar = webhook.avatarURL({ size: 128 });
+                        avatars.set(firstAuthor.id, webhookAvatar);
                     }
                     for (const msg of channelData.messages) {
                         let avatarUrl = avatars.get(msg.author.id);
+                        console.log(avatarUrl);
                         if (avatarUrl === undefined) {
                             const authorImage = await models_1.ImageModel.findById(msg.author.avatar);
                             const updatedWebhook = await webhook.edit({
                                 avatar: authorImage?.data
                             });
                             avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined;
+                            console.log(avatarUrl);
                             avatars.set(msg.author.id, avatarUrl ?? null);
                         }
                         await webhook.send({

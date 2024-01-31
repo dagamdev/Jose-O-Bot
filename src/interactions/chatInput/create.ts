@@ -1,4 +1,4 @@
-import { type BotClient, ClientSlashCommand, type SlashInteraction } from '../../client'
+import { ClientSlashCommand } from '../../client'
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js'
 import { BUTTON_IDS } from '../../utils/constants'
 
@@ -18,7 +18,14 @@ export default class CreateSlashCommand extends ClientSlashCommand {
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .toJSON(),
-      async (int: SlashInteraction, client: BotClient) => {
+      async (int) => {
+        const { guild } = int
+
+        if (guild === null) {
+          int.reply({ ephemeral: true, content: 'Este comando solo se puede utilizar dentro de un servidor.' })
+          return
+        }
+
         const subCommandName = int.options.getSubcommand(true)
 
         if (subCommandName === 'backup') {

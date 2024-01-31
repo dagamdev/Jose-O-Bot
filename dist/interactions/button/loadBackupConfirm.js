@@ -100,14 +100,12 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                     const webhook = await newChannel.createWebhook({ name: 'deceiver' });
                     for (const msg of channelData.messages) {
                         let avatarUrl = avatars.get(msg.author.id);
-                        console.log(121, avatarUrl);
                         if (avatarUrl === undefined) {
                             const authorImage = await models_1.ImageModel.findById(msg.author.avatar);
                             const updatedWebhook = await webhook.edit({
                                 avatar: authorImage?.data
                             });
                             avatarUrl = updatedWebhook.avatarURL({ size: 128 });
-                            console.log(130, avatarUrl);
                             avatars.set(msg.author.id, avatarUrl);
                         }
                         await webhook.send({

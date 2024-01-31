@@ -101,9 +101,9 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                     const avatarUrl = avatars.get(firstAuthor.id);
                     let avatar;
                     if (avatarUrl === undefined) {
-                        console.log(firstAuthor.avatar);
+                        console.log(123, firstAuthor.avatar);
                         const authorImage = await models_1.ImageModel.findById(firstAuthor.avatar);
-                        console.log(authorImage);
+                        console.log(125, authorImage);
                         avatar = authorImage?.data;
                     }
                     else
@@ -118,14 +118,14 @@ class LoadBackupConfirm extends client_1.ClientButtonInteraction {
                     }
                     for (const msg of channelData.messages) {
                         let avatarUrl = avatars.get(msg.author.id);
-                        console.log(avatarUrl);
+                        console.log(141, avatarUrl);
                         if (avatarUrl === undefined) {
                             const authorImage = await models_1.ImageModel.findById(msg.author.avatar);
                             const updatedWebhook = await webhook.edit({
                                 avatar: authorImage?.data
                             });
                             avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined;
-                            console.log(avatarUrl);
+                            console.log(150, avatarUrl);
                             avatars.set(msg.author.id, avatarUrl ?? null);
                         }
                         await webhook.send({

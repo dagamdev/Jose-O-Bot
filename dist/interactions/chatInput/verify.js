@@ -33,6 +33,10 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
     constructor() {
         super(VerifyScb, async (int, client) => {
             const { options, guild, guildId } = int;
+            if (guild === null) {
+                int.reply({ ephemeral: true, content: 'Este comando solo se puede utilizar dentro de un servidor.' });
+                return;
+            }
             if (!(guild?.members.me?.permissions.has('ManageRoles') ?? false)) {
                 int.reply({ ephemeral: true, content: 'Necesito el permiso para administrar roles.' });
                 return;

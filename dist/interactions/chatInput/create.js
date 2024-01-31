@@ -16,7 +16,12 @@ class CreateSlashCommand extends client_1.ClientSlashCommand {
             .setDescription('Create server backup.')
             .setDescriptionLocalization('es-ES', 'Crear respaldo del servidor.'))
             .setDefaultMemberPermissions(discord_js_1.PermissionFlagsBits.Administrator)
-            .toJSON(), async (int, client) => {
+            .toJSON(), async (int) => {
+            const { guild } = int;
+            if (guild === null) {
+                int.reply({ ephemeral: true, content: 'Este comando solo se puede utilizar dentro de un servidor.' });
+                return;
+            }
             const subCommandName = int.options.getSubcommand(true);
             if (subCommandName === 'backup') {
                 const ConfirmationBackupEmbed = new discord_js_1.EmbedBuilder({

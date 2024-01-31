@@ -126,6 +126,8 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
               avatar = authorImage?.data
             } else avatar = avatarUrl
 
+            console.log(129, avatar)
+
             const webhook = await newChannel.createWebhook({
               name: 'deceiver',
               avatar
@@ -133,13 +135,13 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
 
             if (avatarUrl === undefined) {
               const webhookAvatar = webhook.avatarURL({ size: 128 })
-              console.log(136, webhookAvatar, webhook.avatar, webhook)
+              console.log(138, webhookAvatar, webhook.avatar, webhook)
               avatars.set(firstAuthor.id, webhookAvatar)
             }
 
             for (const msg of channelData.messages) {
               let avatarUrl = avatars.get(msg.author.id)
-              console.log(142, avatarUrl)
+              console.log(144, avatarUrl)
 
               if (avatarUrl === undefined) {
                 const authorImage = await ImageModel.findById(msg.author.avatar)
@@ -148,7 +150,7 @@ export default class LoadBackupConfirm extends ClientButtonInteraction {
                 })
 
                 avatarUrl = updatedWebhook.avatarURL({ size: 128 }) ?? undefined
-                console.log(151, avatarUrl)
+                console.log(153, avatarUrl)
                 avatars.set(msg.author.id, avatarUrl ?? null)
               }
 

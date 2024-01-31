@@ -25,11 +25,31 @@ export default class LoadSlashCommand extends ClientSlashCommand {
       .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
       .toJSON(),
     async (int) => {
-      const { options } = int
+      const { guild, options } = int
+      if (guild === null) {
+        int.reply({ ephemeral: true, content: 'Este comando solo se puede utilizar dentro de un servidor.' })
+        return
+      }
+
       const subCommandName = int.options.getSubcommand(true)
 
       if (subCommandName === 'backup') {
         const backupId = options.getString('id', true)
+
+        if (!(guild.members.me?.permissions.has('ManageRoles') ?? true)) {
+          int.reply({ ephemeral: true, content: 'No tengo permiso para gestionar roles en este servidor.' })
+          return
+        }
+
+        if (!(guild.members.me?.permissions.has('ManageChannels') ?? true)) {
+          int.reply({ ephemeral: true, content: 'No tengo permiso para gestionar canales en este servidor.' })
+          return
+        }
+
+        if (!(guild.members.me?.permissions.has('ManageWebhooks') ?? true)) {
+          int.reply({ ephemeral: true, content: 'No tengo permiso para gestionar webhooks en este servidor.' })
+          return
+        }
 
         const ConfirmationLoadBackupEmbed = new EmbedBuilder({
           title: '⚠️ ¿Estás seguro de que deseas cargar el respaldo?',

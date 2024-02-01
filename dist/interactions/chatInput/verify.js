@@ -141,9 +141,13 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
             }
             const definitiveVerificationChannel = channel ?? int.channel;
             if (definitiveVerificationChannel?.isTextBased() ?? false) {
-                const VerificationEmbed = new discord_js_1.EmbedBuilder()
-                    .setTitle('Verificación')
-                    .setDescription('¡Hola! Antes de explorar nuestro contenido, únete a nuestro servidor de respaldo dando __clik al botón “Server”__ para realizar la verificación, luego de ingresar, da __clik en el botón “verificar”__. ¡Listo para disfrutar!')
+                const VerificationEmbed = new discord_js_1.EmbedBuilder({
+                    title: 'Verificación',
+                    description: '¡Hola! Antes de explorar nuestro contenido, únete a nuestro servidor de respaldo dando __clik al botón “Server”__ para realizar la verificación, luego de ingresar, da __clik en el botón “verificar”__. ¡Listo para disfrutar!',
+                    footer: {
+                        text: 'Es obligatorio permanecer en el servidor; de lo contrario, la verificación será removida.'
+                    }
+                })
                     .setColor(client.data.colors.default);
                 const VerificationButton = new discord_js_1.ButtonBuilder()
                     .setCustomId(constants_1.BUTTON_IDS.VERiFY)

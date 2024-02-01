@@ -16,19 +16,22 @@ export default class MemberRemoveEvent extends ClientEvent {
       const verifyGuild = client.getGuild(verifyData.guildId)
 
       if (verifyGuild !== undefined) {
-        verifyGuild.members.cache.get(member.id)?.roles.remove(verifyData.rolId).then(() => {
-          const MemberRemoveRoleEmbed = new EmbedBuilder({
-            title: `⚠️ Te he retirado el rol de verificación en el servidor ${verifyGuild.name}.`,
-            description: `Al salir del servidor requerido para la verificación, te he eliminado el rol de verificación dentro de **${verifyGuild.name}**.`,
-            footer: {
-              text: 'Es obligatorio permanecer en el servidor requerido para la verificación.'
-            }
-          }).setColor('Yellow')
+        const verifyMember = verifyGuild.members.cache.get(member.id)
+        if (verifyMember !== undefined && verifyMember.roles.cache.has(verifyData.rolId)) {
+          verifyMember.roles.remove(verifyData.rolId).then(() => {
+            const MemberRemoveRoleEmbed = new EmbedBuilder({
+              title: `⚠️ Te he retirado el rol de verificación en el servidor ${verifyGuild.name}.`,
+              description: `Al salir del servidor requerido para la verificación, te he eliminado el rol de verificación dentro de **${verifyGuild.name}**.`,
+              footer: {
+                text: 'Es obligatorio permanecer en el servidor requerido para la verificación.'
+              }
+            }).setColor('Yellow')
 
-          member.send({ embeds: [MemberRemoveRoleEmbed] })
-        }).catch((e) => {
-          console.log('El rol no se pudo eliminar del miembro ', e)
-        })
+            member.send({ embeds: [MemberRemoveRoleEmbed] })
+          }).catch((e) => {
+            client.manageError('El rol no se pudo eliminar del miembro: ', e)
+          })
+        }
       }
     }
   }

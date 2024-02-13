@@ -44,13 +44,17 @@ class YesCheckVerifications extends client_1.ClientButtonInteraction {
             }).setColor('Yellow');
             for (const unverified of unverifiedMembers) {
                 const member = unverified[1];
-                await member.roles.remove(verifyData.rolId);
-                await member.send({ embeds: [MemberRemoveRoleEmbed] });
-                await new Promise((resolve) => {
-                    setTimeout(() => {
-                        resolve(undefined);
-                    }, 1000);
-                });
+                try {
+                    await member.roles.remove(verifyData.rolId);
+                    await member.send({ embeds: [MemberRemoveRoleEmbed] });
+                    await new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve(undefined);
+                        }, 1000);
+                    });
+                }
+                catch (error) {
+                }
             }
             const EndEmbed = new discord_js_1.EmbedBuilder({
                 title: 'Acción finalizada',

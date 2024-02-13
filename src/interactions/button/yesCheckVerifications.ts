@@ -57,14 +57,18 @@ export default class YesCheckVerifications extends ClientButtonInteraction {
         for (const unverified of unverifiedMembers) {
           const member = unverified[1]
 
-          await member.roles.remove(verifyData.rolId)
-          await member.send({ embeds: [MemberRemoveRoleEmbed] })
+          try {
+            await member.roles.remove(verifyData.rolId)
+            await member.send({ embeds: [MemberRemoveRoleEmbed] })
 
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(undefined)
-            }, 1000)
-          })
+            await new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(undefined)
+              }, 1000)
+            })
+          } catch (error) {
+
+          }
         }
 
         const EndEmbed = new EmbedBuilder({

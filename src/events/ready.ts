@@ -1,4 +1,7 @@
+import { EmbedBuilder } from 'discord.js'
 import { type BotClient, ClientEvent } from '../client'
+import { IS_DEVELOPMENT } from '../utils/config'
+import { CHANNEL_IDS } from '../utils/constants'
 
 export default class ReadyEvent extends ClientEvent {
   constructor () {
@@ -7,6 +10,18 @@ export default class ReadyEvent extends ClientEvent {
 
   public async execute (client: BotClient) {
     console.log('💻 VIBBE\'s client started')
+
+    if (IS_DEVELOPMENT === undefined) {
+      const readyChannel = client.getChannel(CHANNEL_IDS.LOG)
+
+      if (readyChannel !== undefined && readyChannel.isTextBased()) {
+        const ReadyEmbed = new EmbedBuilder({
+          title: 'I\'m ready'
+        }).setColor('Green')
+
+        readyChannel.send({ embeds: [ReadyEmbed] })
+      }
+    }
 
     const clientCommands = await client.application?.commands.fetch()
     client.slashCommands.forEach(async sc => {

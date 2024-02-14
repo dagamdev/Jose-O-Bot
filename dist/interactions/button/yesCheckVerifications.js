@@ -35,18 +35,10 @@ class YesCheckVerifications extends client_1.ClientButtonInteraction {
                 description: `Se está eliminando el rol de verificación de **${unverifiedMembers.size}** miembros que no se encuentran dentro del servidor requerido.`
             }).setColor(client.data.colors.default);
             await int.update({ embeds: [StartEmbed], components: [] });
-            const MemberRemoveRoleEmbed = new discord_js_1.EmbedBuilder({
-                title: `⚠️ Te he retirado el rol de verificación en el servidor ${requiredGuild.name}.`,
-                description: `Al salir del servidor requerido para la verificación, te he eliminado el rol de verificación dentro de **${requiredGuild.name}**.`,
-                footer: {
-                    text: 'Es obligatorio permanecer en el servidor requerido para la verificación.'
-                }
-            }).setColor('Yellow');
             for (const unverified of unverifiedMembers) {
                 const member = unverified[1];
                 try {
                     await member.roles.remove(verifyData.rolId);
-                    await member.send({ embeds: [MemberRemoveRoleEmbed] });
                     await new Promise((resolve) => {
                         setTimeout(() => {
                             resolve(undefined);
@@ -54,6 +46,7 @@ class YesCheckVerifications extends client_1.ClientButtonInteraction {
                     });
                 }
                 catch (error) {
+                    client.manageError('Error in yes-check-verification remove role iterator', error);
                 }
             }
             const EndEmbed = new discord_js_1.EmbedBuilder({

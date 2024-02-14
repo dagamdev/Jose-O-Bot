@@ -46,20 +46,11 @@ export default class YesCheckVerifications extends ClientButtonInteraction {
 
         await int.update({ embeds: [StartEmbed], components: [] })
 
-        const MemberRemoveRoleEmbed = new EmbedBuilder({
-          title: `⚠️ Te he retirado el rol de verificación en el servidor ${requiredGuild.name}.`,
-          description: `Al salir del servidor requerido para la verificación, te he eliminado el rol de verificación dentro de **${requiredGuild.name}**.`,
-          footer: {
-            text: 'Es obligatorio permanecer en el servidor requerido para la verificación.'
-          }
-        }).setColor('Yellow')
-
         for (const unverified of unverifiedMembers) {
           const member = unverified[1]
 
           try {
             await member.roles.remove(verifyData.rolId)
-            await member.send({ embeds: [MemberRemoveRoleEmbed] })
 
             await new Promise((resolve) => {
               setTimeout(() => {
@@ -67,7 +58,7 @@ export default class YesCheckVerifications extends ClientButtonInteraction {
               }, 1000)
             })
           } catch (error) {
-
+            client.manageError('Error in yes-check-verification remove role iterator', error)
           }
         }
 

@@ -40,31 +40,62 @@ class CheckSlashCommand extends client_1.ClientSlashCommand {
                     int.reply({ ephemeral: true, content: 'Necesito estar dentro del servidor requerido para que el sistema de verificación y sus comandos funcionen.' });
                     return;
                 }
-                const unverifiedMembers = guild.members.cache.filter(f => f.roles.cache.has(verifyData.rolId) && !requiredGuild.members.cache.has(f.id)).size;
-                if (unverifiedMembers === 0) {
-                    int.reply({ ephemeral: true, content: 'No se encontraron miembros verificados que no estén dentro del servidor requerido.' });
+                const verifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && requiredGuild.members.cache.has(f.id) && !f.roles.cache.has(verifyData.rolId)).size;
+                const unverifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && f.roles.cache.has(verifyData.rolId) && !requiredGuild.members.cache.has(f.id)).size;
+                if (verifiedMembers === 0 && unverifiedMembers === 0) {
+                    int.reply({ ephemeral: true, content: 'No hay miembros que deban estar verificados y no lo estén, ni miembros que estén verificados y no deban estarlo.' });
                     return;
                 }
                 const CheckVerificationsStatusEmbed = new discord_js_1.EmbedBuilder({
                     title: 'Comprobación de verificaciones',
-                    description: `Se encontraron **${unverifiedMembers}** miembros verificados que no se encuentran dentro del servidor requerido.\n¿Quieres que elimine el rol de verificación de esos miembros?`
+                    description: `${verifiedMembers !== 0
+                        ? `Se encontraron **${verifiedMembers}** miembros que están en el servidor requerido pero no tener el rol.\n`
+                        : ''}${unverifiedMembers !== 0 ? `Se encontraron **${unverifiedMembers}** miembros verificados que no se encuentran dentro del servidor requerido.\n` : ''}\n¿Qué acción quieres realizar?`
                 }).setColor(client.data.colors.default);
                 const CheckVerificationsComponents = new discord_js_1.ActionRowBuilder({
                     components: [
                         new discord_js_1.ButtonBuilder({
-                            customId: constants_1.BUTTON_IDS.YES_CHECK_VERIFICATIONS,
-                            emoji: '👍',
-                            label: 'Si',
-                            style: discord_js_1.ButtonStyle.Success
-                        }),
-                        new discord_js_1.ButtonBuilder({
-                            customId: constants_1.BUTTON_IDS.NO_CHECK_VERIFICATIONS,
+                            customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_NONE,
                             emoji: '👎',
-                            label: 'No',
+                            label: 'Ninguna',
                             style: discord_js_1.ButtonStyle.Danger
                         })
                     ]
                 });
+                if (verifiedMembers !== 0 && unverifiedMembers !== 0) {
+                    CheckVerificationsComponents.components.unshift(new discord_js_1.ButtonBuilder({
+                        customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_REMOVE,
+                        emoji: '➖',
+                        label: 'Eliminar rol',
+                        style: discord_js_1.ButtonStyle.Secondary
+                    }), new discord_js_1.ButtonBuilder({
+                        customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_ADD,
+                        emoji: '➕',
+                        label: 'Agregar rol',
+                        style: discord_js_1.ButtonStyle.Secondary
+                    }), new discord_js_1.ButtonBuilder({
+                        customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_BOTH,
+                        emoji: '🪄',
+                        label: 'Ambas',
+                        style: discord_js_1.ButtonStyle.Primary
+                    }));
+                }
+                else if (verifiedMembers !== 0) {
+                    CheckVerificationsComponents.components.unshift(new discord_js_1.ButtonBuilder({
+                        customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_ADD,
+                        emoji: '➕',
+                        label: 'Agregar rol',
+                        style: discord_js_1.ButtonStyle.Secondary
+                    }));
+                }
+                else {
+                    CheckVerificationsComponents.components.unshift(new discord_js_1.ButtonBuilder({
+                        customId: constants_1.BUTTON_IDS.CHECK_VERIFICATIONS_REMOVE,
+                        emoji: '➖',
+                        label: 'Eliminar rol',
+                        style: discord_js_1.ButtonStyle.Secondary
+                    }));
+                }
                 int.reply({ ephemeral: true, embeds: [CheckVerificationsStatusEmbed], components: [CheckVerificationsComponents] });
             }
         });

@@ -8,8 +8,10 @@ var BUTTON_IDS;
     BUTTON_IDS["CREATE_BACKUP_CANCEL"] = "create-backup-cancel";
     BUTTON_IDS["LOAD_BACKUP_CONFIRM"] = "load-backup-confirm";
     BUTTON_IDS["LOAD_BACKUP_CANCEL"] = "load-backup-cancel";
-    BUTTON_IDS["YES_CHECK_VERIFICATIONS"] = "yes-check-verifications";
-    BUTTON_IDS["NO_CHECK_VERIFICATIONS"] = "no-check-verifications";
+    BUTTON_IDS["CHECK_VERIFICATIONS_REMOVE"] = "verifications-remove-role";
+    BUTTON_IDS["CHECK_VERIFICATIONS_ADD"] = "verifications-add-role";
+    BUTTON_IDS["CHECK_VERIFICATIONS_BOTH"] = "verifications-both";
+    BUTTON_IDS["CHECK_VERIFICATIONS_NONE"] = "verifications-none";
 })(BUTTON_IDS || (exports.BUTTON_IDS = BUTTON_IDS = {}));
 var CHANNEL_IDS;
 (function (CHANNEL_IDS) {

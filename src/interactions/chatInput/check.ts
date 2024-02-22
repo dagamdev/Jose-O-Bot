@@ -62,7 +62,7 @@ export default class CheckSlashCommand extends ClientSlashCommand {
             title: 'Comprobación de verificaciones',
             description: `${verifiedMembers !== 0
               ? `Se encontraron **${verifiedMembers}** miembros que están en el servidor requerido pero no tener el rol.\n`
-              : ''}${unverifiedMembers !== 0 ? `Se encontraron **${unverifiedMembers}** miembros verificados que no se encuentran dentro del servidor requerido.\n` : ''}¿Qué acción quieres realizar?`
+              : ''}${unverifiedMembers !== 0 ? `Se encontraron **${unverifiedMembers}** miembros verificados que no se encuentran dentro del servidor requerido.\n` : ''}\n¿Qué acción quieres realizar?`
           }).setColor(client.data.colors.default)
 
           const CheckVerificationsComponents = new ActionRowBuilder<ButtonBuilder>({

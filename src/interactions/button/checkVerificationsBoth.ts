@@ -9,82 +9,80 @@ export default class YesCheckVerifications extends ClientButtonInteraction {
         const { guild } = int
 
         if (guild === null) {
-          int.reply({ ephemeral: true, content: 'No puede ejecutar está acción fuera de un servidor.' })
+          int.update({ content: 'No puede ejecutar está acción fuera de un servidor.', embeds: [], components: [] })
           return
         }
 
         const verifyData = await VerifyModel.findOne({ guildId: guild.id })
 
         if (verifyData === null) {
-          int.reply({ ephemeral: true, content: 'El sistema de verificación no está establecido en este servidor o no se han podido cargar los datos.' })
+          int.update({ content: 'El sistema de verificación no está establecido en este servidor o no se han podido cargar los datos.', embeds: [], components: [] })
           return
         }
 
         if (!(guild.members.me?.permissions.has('ManageRoles') ?? true)) {
-          int.reply({ ephemeral: true, content: 'No tengo permiso para gestionar roles en este servidor.' })
+          int.update({ content: 'No tengo permiso para gestionar roles en este servidor.', embeds: [], components: [] })
           return
         }
 
         const requiredGuild = client.getGuild(verifyData.requiredGuildId)
 
         if (requiredGuild === undefined) {
-          int.reply({ ephemeral: true, content: 'Necesito estar dentro del servidor requerido para que el sistema de verificación y sus comandos funcionen.' })
-          return
-        }
-
-        const verifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && requiredGuild.members.cache.has(f.id) && !f.roles.cache.has(verifyData.rolId))
-        const unverifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && f.roles.cache.has(verifyData.rolId) && !requiredGuild.members.cache.has(f.id))
-
-        if (verifiedMembers.size === 0 && unverifiedMembers.size === 0) {
-          int.reply({ ephemeral: true, content: 'Parece que los datos han cambiado. No hay miembros sin el rol de verificación que cumplan los requisitos, ni miembros con el rol que no estén en el servidor requerido.' })
+          int.update({ content: 'Necesito estar dentro del servidor requerido para que el sistema de verificación y sus comandos funcionen.', embeds: [], components: [] })
           return
         }
 
         const StartEmbed = new EmbedBuilder({
           title: 'Ejecutando acciones...',
-          description: `🔘 Agregar el rol de verificación a ${verifiedMembers.size} miembros.\n🔘 Eliminar el rol de verificación de **${unverifiedMembers.size}** miembros.`
+          description: '🔘 Agregar el rol de verificación.\n🔘 Eliminar el rol de verificación.'
         }).setColor(client.data.colors.default)
 
         await int.update({ embeds: [StartEmbed], components: [] })
 
-        for (const unverified of verifiedMembers) {
-          const member = unverified[1]
+        let verifiedMembers = 0
+        let unverifiedMembers = 0
+
+        for (const m of await guild.members.fetch()) {
+          const member = m[1]
+
+          if (member.user.bot) continue
+
+          const reqGuildMember = await client.userInGuild(requiredGuild, member.id)
+          const containRole = member.roles.cache.has(verifyData.rolId)
 
           try {
-            await member.roles.add(verifyData.rolId)
+            if (reqGuildMember && !containRole) {
+              verifiedMembers++
+              await member.roles.add(verifyData.rolId)
+              await new Promise((resolve) => {
+                setTimeout(() => {
+                  resolve(undefined)
+                }, 1000)
+              })
+            }
+            if (containRole && !reqGuildMember) {
+              unverifiedMembers++
+              await member.roles.remove(verifyData.rolId)
 
-            await new Promise((resolve) => {
-              setTimeout(() => {
-                resolve(undefined)
-              }, 1000)
-            })
+              await new Promise((resolve) => {
+                setTimeout(() => {
+                  resolve(undefined)
+                }, 1000)
+              })
+            }
           } catch (error) {
-            client.manageError('Error in check-verification-both add role iterator', error)
+            client.manageError('Error in check-verification-both iterator', error)
           }
         }
 
-        StartEmbed.setDescription(`✅ Agregar el rol de verificación a ${verifiedMembers.size} miembros.\n🔘 Eliminar el rol de verificación de **${unverifiedMembers.size}** miembros.`)
-        await int.editReply({ embeds: [StartEmbed] })
-
-        for (const unverified of unverifiedMembers) {
-          const member = unverified[1]
-
-          try {
-            await member.roles.remove(verifyData.rolId)
-
-            await new Promise((resolve) => {
-              setTimeout(() => {
-                resolve(undefined)
-              }, 1000)
-            })
-          } catch (error) {
-            client.manageError('Error in check-verification-both remove role iterator', error)
-          }
+        if (verifiedMembers === 0 && unverifiedMembers === 0) {
+          int.update({ content: 'Parece que los datos han cambiado. No hay miembros sin el rol de verificación que cumplan los requisitos, ni miembros con el rol que no estén en el servidor requerido.', embeds: [] })
+          return
         }
 
         const EndEmbed = new EmbedBuilder({
-          title: 'Acciónes finalizada',
-          description: `✅ Agregar el rol de verificación a ${verifiedMembers.size} miembros.\n✅ Eliminar el rol de verificación de **${unverifiedMembers.size}** miembros.`
+          title: 'Acciónes finalizadas',
+          description: `✅ Agregar el rol de verificación a **${verifiedMembers}** miembros.\n✅ Eliminar el rol de verificación de **${unverifiedMembers}** miembros.`
         }).setColor('Green')
 
         await int.editReply({ embeds: [EndEmbed] })

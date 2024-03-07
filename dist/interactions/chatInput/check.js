@@ -40,16 +40,31 @@ class CheckSlashCommand extends client_1.ClientSlashCommand {
                     int.reply({ ephemeral: true, content: 'Necesito estar dentro del servidor requerido para que el sistema de verificación y sus comandos funcionen.' });
                     return;
                 }
-                const verifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && requiredGuild.members.cache.has(f.id) && !f.roles.cache.has(verifyData.rolId)).size;
-                const unverifiedMembers = guild.members.cache.filter(f => (!f.user.bot) && f.roles.cache.has(verifyData.rolId) && !requiredGuild.members.cache.has(f.id)).size;
+                const StartEmbed = new discord_js_1.EmbedBuilder({
+                    title: 'Inspeccionando usuarios...'
+                }).setColor(client.data.colors.default);
+                const startMessage = await int.reply({ embeds: [StartEmbed], fetchReply: true });
+                let verifiedMembers = 0;
+                let unverifiedMembers = 0;
+                for (const m of await guild.members.fetch()) {
+                    const member = m[1];
+                    if (member.user.bot)
+                        continue;
+                    const reqGuildMember = await client.userInGuild(requiredGuild, member.id);
+                    const containRole = member.roles.cache.has(verifyData.rolId);
+                    if (reqGuildMember && !containRole)
+                        verifiedMembers++;
+                    if (containRole && !reqGuildMember)
+                        unverifiedMembers++;
+                }
                 if (verifiedMembers === 0 && unverifiedMembers === 0) {
-                    int.reply({ ephemeral: true, content: 'No hay miembros que deban estar verificados y no lo estén, ni miembros que estén verificados y no deban estarlo.' });
+                    await startMessage.edit({ content: 'No hay miembros que deban estar verificados y no lo estén, ni miembros que estén verificados y no deban estarlo.', embeds: [] });
                     return;
                 }
                 const CheckVerificationsStatusEmbed = new discord_js_1.EmbedBuilder({
                     title: 'Comprobación de verificaciones',
                     description: `${verifiedMembers !== 0
-                        ? `Se encontraron **${verifiedMembers}** miembros que están en el servidor requerido pero no tener el rol.\n`
+                        ? `Se encontraron **${verifiedMembers}** miembros que están en el servidor requerido pero no tienen el rol.\n`
                         : ''}${unverifiedMembers !== 0 ? `Se encontraron **${unverifiedMembers}** miembros verificados que no se encuentran dentro del servidor requerido.\n` : ''}\n¿Qué acción quieres realizar?`
                 }).setColor(client.data.colors.default);
                 const CheckVerificationsComponents = new discord_js_1.ActionRowBuilder({
@@ -96,7 +111,7 @@ class CheckSlashCommand extends client_1.ClientSlashCommand {
                         style: discord_js_1.ButtonStyle.Secondary
                     }));
                 }
-                int.reply({ ephemeral: true, embeds: [CheckVerificationsStatusEmbed], components: [CheckVerificationsComponents] });
+                await startMessage.edit({ embeds: [CheckVerificationsStatusEmbed], components: [CheckVerificationsComponents] });
             }
         });
     }

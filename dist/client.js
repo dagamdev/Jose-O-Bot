@@ -106,6 +106,15 @@ class BotClient extends discord_js_1.Client {
     getChannel(channelId) {
         return this.channels.cache.get(channelId);
     }
+    async userInGuild(guild, userId) {
+        try {
+            await guild.members.fetch(userId);
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
 }
 exports.BotClient = BotClient;
 class ClientEvent {

@@ -1,6 +1,6 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
-import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction, type AutocompleteInteraction, EmbedBuilder } from 'discord.js'
+import { type CacheType, type ChatInputCommandInteraction, Client, Collection, type RESTPostAPIChatInputApplicationCommandsJSONBody, type ButtonInteraction, type AutocompleteInteraction, EmbedBuilder, type Guild } from 'discord.js'
 import { BOT_DATA, CACHE } from './utils/data'
 import type { EventNames, ButtonIDKeys } from './types'
 import { connect } from 'mongoose'
@@ -88,6 +88,15 @@ export class BotClient extends Client {
 
   public getChannel (channelId: string) {
     return this.channels.cache.get(channelId)
+  }
+
+  public async userInGuild (guild: Guild, userId: string) {
+    try {
+      await guild.members.fetch(userId)
+      return true
+    } catch (error) {
+      return false
+    }
   }
 }
 

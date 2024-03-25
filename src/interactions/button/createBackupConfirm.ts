@@ -66,7 +66,8 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
               for (const msgData of messages) {
                 const msg = msgData[1]
 
-                if (msg.content.length === 0 && msg.attachments.size === 0) continue
+                const mbSize = 1_048_576
+                if (msg.content.length === 0 && msg.attachments.size === 0 && msg.attachments.size > mbSize * 24) continue
 
                 let avatar = avatars.get(msg.author.id) ?? null
                 const attachments = []

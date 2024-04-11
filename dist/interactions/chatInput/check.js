@@ -4,6 +4,7 @@ const client_1 = require("../../client");
 const discord_js_1 = require("discord.js");
 const models_1 = require("../../models");
 const constants_1 = require("../../utils/constants");
+const lib_1 = require("../../lib");
 const CheckScb = new discord_js_1.SlashCommandBuilder()
     .setName('check')
     .setNameLocalization('es-ES', 'comprobar')
@@ -52,10 +53,14 @@ class CheckSlashCommand extends client_1.ClientSlashCommand {
                         continue;
                     const reqGuildMember = await client.userInGuild(requiredGuild, member.id);
                     const containRole = member.roles.cache.has(verifyData.rolId);
-                    if (reqGuildMember && !containRole)
+                    if (reqGuildMember && !containRole) {
                         verifiedMembers++;
-                    if (containRole && !reqGuildMember)
+                        (0, lib_1.addIdToVerification)(guild.id, member.id, 'ADD');
+                    }
+                    if (containRole && !reqGuildMember) {
                         unverifiedMembers++;
+                        (0, lib_1.addIdToVerification)(guild.id, member.id, 'REMOVE');
+                    }
                 }
                 if (verifiedMembers === 0 && unverifiedMembers === 0) {
                     await startMessage.edit({ content: 'No hay miembros que deban estar verificados y no lo estén, ni miembros que estén verificados y no deban estarlo.', embeds: [] });

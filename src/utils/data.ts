@@ -17,6 +17,13 @@ const backupIDs: Array<{
   }>
 }> = []
 
+const verifications: Array<{
+  guildId: string
+  addRole: string[]
+  removeRole: string[]
+}> = []
+
 export const CACHE = {
-  backupIDs
+  backupIDs,
+  verifications
 }

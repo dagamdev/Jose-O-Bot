@@ -52,7 +52,7 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
                     if (!(userData.ignoreChannels.find(f => f.guildId === guildId)?.channelIDs.some(s => s === channel.id || s === channel.parentId) ?? true)) {
                         for (const msgData of messages) {
                             const msg = msgData[1];
-                            const mbSize = 1048576;
+                            const mbSize = 1_048_576;
                             if (msg.content.length === 0 && msg.attachments.size === 0 && msg.attachments.size > mbSize * 24)
                                 continue;
                             let avatar = avatars.get(msg.author.id) ?? null;

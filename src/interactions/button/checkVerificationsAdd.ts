@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js'
 import { ClientButtonInteraction } from '../../client'
 import { VerifyModel } from '../../models'
+import { handleVerifiedRole, resetVerifiedRoleData } from '../../lib'
 
 export default class YesCheckVerifications extends ClientButtonInteraction {
   constructor () {
@@ -39,30 +40,8 @@ export default class YesCheckVerifications extends ClientButtonInteraction {
 
         await int.update({ embeds: [StartEmbed], components: [] })
 
-        let verifiedMembers = 0
-
-        for (const m of await guild.members.fetch()) {
-          const member = m[1]
-
-          if (member.user.bot) continue
-
-          const reqGuildMember = await client.userInGuild(requiredGuild, member.id)
-          const containRole = member.roles.cache.has(verifyData.rolId)
-
-          try {
-            if (reqGuildMember && !containRole) {
-              verifiedMembers++
-              await member.roles.add(verifyData.rolId)
-              await new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(undefined)
-                }, 1000)
-              })
-            }
-          } catch (error) {
-            client.manageError('Error in check-verification-both iterator', error)
-          }
-        }
+        const verifiedMembers = await handleVerifiedRole(guild, verifyData.rolId, 'ADD')
+        resetVerifiedRoleData(guild.id)
 
         if (verifiedMembers === 0) {
           int.editReply({ content: 'Parece que no hay miembros en el servidor requerido que no tengan el rol de verificación.', embeds: [] })

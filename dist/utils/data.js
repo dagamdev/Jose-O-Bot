@@ -9,6 +9,8 @@ exports.BOT_DATA = {
     colors
 };
 const backupIDs = [];
+const verifications = [];
 exports.CACHE = {
-    backupIDs
+    backupIDs,
+    verifications
 };

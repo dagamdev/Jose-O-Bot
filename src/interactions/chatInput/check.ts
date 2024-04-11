@@ -2,6 +2,7 @@ import { ClientSlashCommand } from '../../client'
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
 import { VerifyModel } from '../../models'
 import { BUTTON_IDS } from '../../utils/constants'
+import { addIdToVerification } from '../../lib'
 
 const CheckScb = new SlashCommandBuilder()
   .setName('check')
@@ -66,8 +67,14 @@ export default class CheckSlashCommand extends ClientSlashCommand {
             const reqGuildMember = await client.userInGuild(requiredGuild, member.id)
             const containRole = member.roles.cache.has(verifyData.rolId)
 
-            if (reqGuildMember && !containRole) verifiedMembers++
-            if (containRole && !reqGuildMember) unverifiedMembers++
+            if (reqGuildMember && !containRole) {
+              verifiedMembers++
+              addIdToVerification(guild.id, member.id, 'ADD')
+            }
+            if (containRole && !reqGuildMember) {
+              unverifiedMembers++
+              addIdToVerification(guild.id, member.id, 'REMOVE')
+            }
           }
 
           if (verifiedMembers === 0 && unverifiedMembers === 0) {

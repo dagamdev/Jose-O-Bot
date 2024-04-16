@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("../../client");
 const models_1 = require("../../models");
+const backup_1 = require("../../lib/backup");
 class CreateBackupConfirm extends client_1.ClientButtonInteraction {
     constructor() {
         super('CREATE_BACKUP_CONFIRM', async (int, client) => {
@@ -130,22 +131,7 @@ class CreateBackupConfirm extends client_1.ClientButtonInteraction {
             });
             userData.backups.push(newBackup._id);
             await userData.save();
-            const backupIDs = client.cache.backupIDs.find(f => f.userId === user.id);
-            if (backupIDs === undefined) {
-                client.cache.backupIDs.push({
-                    userId: user.id,
-                    IDs: [{
-                            value: newBackup.id,
-                            name: `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`
-                        }]
-                });
-            }
-            else {
-                backupIDs.IDs.push({
-                    value: newBackup.id,
-                    name: `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`
-                });
-            }
+            (0, backup_1.addBackupId)(user.id, newBackup.id, `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`);
             await int.editReply({ content: `**Respaldo creado**\nID del respaldo: \`\`${newBackup.id}\`\`` });
         });
     }

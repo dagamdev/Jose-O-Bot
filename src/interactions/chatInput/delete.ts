@@ -1,6 +1,7 @@
 import { ClientSlashCommand } from '../../client'
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js'
 import { BackupModel, UserModel } from '../../models'
+import { removeBackupId } from '../../lib/backup'
 
 const DeleteScb = new SlashCommandBuilder()
   .setName('delete')
@@ -26,7 +27,7 @@ const DeleteScb = new SlashCommandBuilder()
 export default class DeleteSlashCommand extends ClientSlashCommand {
   constructor () {
     super(DeleteScb,
-      async (int) => {
+      async (int, client) => {
         const { options } = int
         const subcommandName = options.getSubcommand(true)
 
@@ -36,7 +37,7 @@ export default class DeleteSlashCommand extends ClientSlashCommand {
           const userData = await UserModel.findOne({ userId: int.user.id })
 
           if (userData === null || userData.backups.length === 0) {
-            int.reply({ ephemeral: true, content: 'Aún no tienes respaldos que eliminar.' })
+            int.reply({ ephemeral: true, content: 'No tienes respaldos que eliminar.' })
             return
           }
 
@@ -48,6 +49,9 @@ export default class DeleteSlashCommand extends ClientSlashCommand {
           }
 
           userData?.backups.splice(userData?.backups.indexOf(backupData._id), 1)
+          await userData.save()
+
+          removeBackupId(int.user.id, backupData.id as string)
 
           const DeleteBackupEmbed = new EmbedBuilder({
             title: 'Respaldo eliminado',

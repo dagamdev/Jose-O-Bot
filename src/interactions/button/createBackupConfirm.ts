@@ -3,6 +3,7 @@ import { ClientButtonInteraction } from '../../client'
 import { BackupModel, ImageModel, UserModel } from '../../models'
 import { type Channel } from '../../models/backup'
 import { type Types } from 'mongoose'
+import { addBackupId } from '../../lib/backup'
 
 export default class CreateBackupConfirm extends ClientButtonInteraction {
   constructor () {
@@ -153,21 +154,7 @@ export default class CreateBackupConfirm extends ClientButtonInteraction {
         userData.backups.push(newBackup._id)
         await userData.save()
 
-        const backupIDs = client.cache.backupIDs.find(f => f.userId === user.id)
-        if (backupIDs === undefined) {
-          client.cache.backupIDs.push({
-            userId: user.id,
-            IDs: [{
-              value: newBackup.id,
-              name: `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`
-            }]
-          })
-        } else {
-          backupIDs.IDs.push({
-            value: newBackup.id,
-            name: `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`
-          })
-        }
+        addBackupId(user.id, newBackup.id as string, `${guild.name} | ${newBackup.createdAt.toLocaleDateString()} | ${newBackup.id}`)
 
         await int.editReply({ content: `**Respaldo creado**\nID del respaldo: \`\`${newBackup.id}\`\`` })
       }

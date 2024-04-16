@@ -23,7 +23,7 @@ class BackupSlashCommand extends client_1.ClientSlashCommand {
             if (subcommandName === 'list') {
                 const userData = await models_1.UserModel.findOne({ userId: int.user.id }).populate('backups');
                 if ((userData?.backups.length ?? 0) === 0) {
-                    int.reply({ ephemeral: true, content: 'Aún no tienes respaldos creados.' });
+                    int.reply({ ephemeral: true, content: 'No tienes respaldos creados.' });
                     return;
                 }
                 const BackupListEmbed = new discord_js_1.EmbedBuilder({

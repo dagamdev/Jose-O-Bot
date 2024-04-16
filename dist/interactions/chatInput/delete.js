@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("../../client");
 const discord_js_1 = require("discord.js");
 const models_1 = require("../../models");
+const backup_1 = require("../../lib/backup");
 const DeleteScb = new discord_js_1.SlashCommandBuilder()
     .setName('delete')
     .setNameLocalization('es-ES', 'eliminar')
@@ -23,14 +24,14 @@ const DeleteScb = new discord_js_1.SlashCommandBuilder()
     .toJSON();
 class DeleteSlashCommand extends client_1.ClientSlashCommand {
     constructor() {
-        super(DeleteScb, async (int) => {
+        super(DeleteScb, async (int, client) => {
             const { options } = int;
             const subcommandName = options.getSubcommand(true);
             if (subcommandName === 'backup') {
                 const backupId = options.getString('id', true);
                 const userData = await models_1.UserModel.findOne({ userId: int.user.id });
                 if (userData === null || userData.backups.length === 0) {
-                    int.reply({ ephemeral: true, content: 'Aún no tienes respaldos que eliminar.' });
+                    int.reply({ ephemeral: true, content: 'No tienes respaldos que eliminar.' });
                     return;
                 }
                 const backupData = await models_1.BackupModel.findOneAndDelete({ id: backupId });
@@ -39,6 +40,8 @@ class DeleteSlashCommand extends client_1.ClientSlashCommand {
                     return;
                 }
                 userData?.backups.splice(userData?.backups.indexOf(backupData._id), 1);
+                await userData.save();
+                (0, backup_1.removeBackupId)(int.user.id, backupData.id);
                 const DeleteBackupEmbed = new discord_js_1.EmbedBuilder({
                     title: 'Respaldo eliminado',
                     description: `El respaldo del servidor **${backupData.guild.name}** con la ID \`\`${backupData.id}\`\` ha sido eliminado.`

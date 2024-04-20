@@ -8,11 +8,12 @@ export default class InteractionCreateEvent extends ClientEvent {
 
   public async execute (int: Interaction<CacheType>, client: BotClient) {
     if (int.isChatInputCommand()) {
-      const { commandName } = int
+      const { commandName, user } = int
 
       const command = client.slashCommands.get(commandName)
 
       if (command !== undefined) {
+        console.log(`Executed ${commandName} command by ${user.username}`)
         try {
           await command.execute(int, client)
         } catch (error) {
@@ -22,11 +23,12 @@ export default class InteractionCreateEvent extends ClientEvent {
     }
 
     if (int.isButton()) {
-      const { customId } = int
+      const { customId, user } = int
 
       const buttonHandler = client.buttonHandlers.get(customId)
 
       if (buttonHandler !== undefined) {
+        console.log(`Pulsed ${customId} button by ${user.username}`)
         try {
           await buttonHandler.execute(int, client)
         } catch (error) {

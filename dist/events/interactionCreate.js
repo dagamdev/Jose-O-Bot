@@ -7,9 +7,10 @@ class InteractionCreateEvent extends client_1.ClientEvent {
     }
     async execute(int, client) {
         if (int.isChatInputCommand()) {
-            const { commandName } = int;
+            const { commandName, user } = int;
             const command = client.slashCommands.get(commandName);
             if (command !== undefined) {
+                console.log(`Executed ${commandName} command by ${user.username}`);
                 try {
                     await command.execute(int, client);
                 }
@@ -19,9 +20,10 @@ class InteractionCreateEvent extends client_1.ClientEvent {
             }
         }
         if (int.isButton()) {
-            const { customId } = int;
+            const { customId, user } = int;
             const buttonHandler = client.buttonHandlers.get(customId);
             if (buttonHandler !== undefined) {
+                console.log(`Pulsed ${customId} button by ${user.username}`);
                 try {
                     await buttonHandler.execute(int, client);
                 }

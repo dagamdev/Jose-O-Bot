@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CHANNEL_IDS = exports.BUTTON_IDS = void 0;
 var BUTTON_IDS;
 (function (BUTTON_IDS) {
-    BUTTON_IDS["VERiFY"] = "verify";
+    BUTTON_IDS["VERIFY"] = "verify";
     BUTTON_IDS["CREATE_BACKUP_CONFIRM"] = "create-backup-confirm";
     BUTTON_IDS["CREATE_BACKUP_CANCEL"] = "create-backup-cancel";
     BUTTON_IDS["LOAD_BACKUP_CONFIRM"] = "load-backup-confirm";

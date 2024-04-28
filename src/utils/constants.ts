@@ -1,5 +1,5 @@
 export enum BUTTON_IDS {
-  VERiFY = 'verify',
+  VERIFY = 'verify',
   CREATE_BACKUP_CONFIRM = 'create-backup-confirm',
   CREATE_BACKUP_CANCEL = 'create-backup-cancel',
   LOAD_BACKUP_CONFIRM = 'load-backup-confirm',

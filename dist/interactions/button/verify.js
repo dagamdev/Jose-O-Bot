@@ -5,7 +5,7 @@ const client_1 = require("../../client");
 const models_1 = require("../../models");
 class VerifyButtonHandler extends client_1.ClientButtonInteraction {
     constructor() {
-        super('VERiFY', async (int, client) => {
+        super('VERIFY', async (int, client) => {
             const { user, guildId, member } = int;
             const VerifyData = await models_1.VerifyModel.findOne({ guildId });
             if (VerifyData === null) {

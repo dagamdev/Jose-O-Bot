@@ -31,6 +31,11 @@ export default class CheckSlashCommand extends ClientSlashCommand {
 
         const subcommandName = options.getSubcommand(true)
 
+        if (subcommandName.toLowerCase().includes('verif')) {
+          await int.reply({ ephemeral: true, content: 'El sistema de verificación está desactivado.' })
+          return
+        }
+
         if (subcommandName === 'verifications') {
           const verifyData = await VerifyModel.findOne({ guildId: guild.id })
 

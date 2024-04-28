@@ -1,7 +1,7 @@
 {
   "name": "vibbe",
-  "version": "2.15.6",
-  "description": "Bot para Jose Olavarrieta",
+  "version": "2.16.6",
+  "description": "Bot para un cliente",
   "main": "src/index.ts",
   "scripts": {
     "start": "node dist",

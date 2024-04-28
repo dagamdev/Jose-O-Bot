@@ -5,7 +5,7 @@ import { VerifyModel } from '../../models'
 export default class VerifyButtonHandler extends ClientButtonInteraction {
   constructor () {
     super(
-      'VERiFY',
+      'VERIFY',
       async (int, client) => {
         const { user, guildId, member } = int
         const VerifyData = await VerifyModel.findOne({ guildId })

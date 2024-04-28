@@ -180,7 +180,7 @@ export default class VerifySlashCommand extends ClientSlashCommand {
             .setColor(client.data.colors.default)
 
           const VerificationButton = new ButtonBuilder()
-            .setCustomId(BUTTON_IDS.VERiFY)
+            .setCustomId(BUTTON_IDS.VERIFY)
             .setEmoji('✅')
             .setLabel('Verificar')
             .setStyle(ButtonStyle.Success)

@@ -10,6 +10,11 @@ export default class InteractionCreateEvent extends ClientEvent {
     if (int.isChatInputCommand()) {
       const { commandName, user } = int
 
+      if (commandName.toLowerCase().includes('verif')) {
+        await int.reply({ ephemeral: true, content: 'El sistema de verificación está desactivado.' })
+        return
+      }
+
       const command = client.slashCommands.get(commandName)
 
       if (command !== undefined) {
@@ -24,6 +29,11 @@ export default class InteractionCreateEvent extends ClientEvent {
 
     if (int.isButton()) {
       const { customId, user } = int
+
+      if (customId.toLowerCase().includes('verif')) {
+        await int.reply({ ephemeral: true, content: 'El sistema de verificación está desactivado.' })
+        return
+      }
 
       const buttonHandler = client.buttonHandlers.get(customId)
 

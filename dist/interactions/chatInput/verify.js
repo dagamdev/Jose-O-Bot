@@ -150,7 +150,7 @@ class VerifySlashCommand extends client_1.ClientSlashCommand {
                 })
                     .setColor(client.data.colors.default);
                 const VerificationButton = new discord_js_1.ButtonBuilder()
-                    .setCustomId(constants_1.BUTTON_IDS.VERiFY)
+                    .setCustomId(constants_1.BUTTON_IDS.VERIFY)
                     .setEmoji('✅')
                     .setLabel('Verificar')
                     .setStyle(discord_js_1.ButtonStyle.Success);

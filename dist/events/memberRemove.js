@@ -8,6 +8,8 @@ class MemberRemoveEvent extends client_1.ClientEvent {
         super('guildMemberRemove');
     }
     async execute(member, client) {
+        if (member.id.length > 0)
+            return;
         const { guild } = member;
         const verifyData = await models_1.VerifyModel.findOne({ requiredGuildId: guild.id });
         if (verifyData !== null) {

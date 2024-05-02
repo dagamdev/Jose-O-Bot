@@ -8,6 +8,7 @@ export default class MemberRemoveEvent extends ClientEvent {
   }
 
   public async execute (member: GuildMember | PartialGuildMember, client: BotClient) {
+    if (member.id.length > 0) return
     const { guild } = member
 
     const verifyData = await VerifyModel.findOne({ requiredGuildId: guild.id })
